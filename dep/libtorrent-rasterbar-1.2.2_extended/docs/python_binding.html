@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.14: http://docutils.sourceforge.net/" />
+<title>libtorrent python binding</title>
+<meta name="author" content="Arvid Norberg, arvid&#64;libtorrent.org" />
+<meta name=viewport content="width=device-width, initial-scale=1">
+<script type="text/javascript">
+/* <![CDATA[ */
+    (function() {
+        var s = document.createElement('script'), t = document.getElementsByTagName('script')[0];
+        s.type = 'text/javascript';
+        s.async = true;
+        s.src = 'https://api.flattr.com/js/0.6/load.js?mode=auto';
+        t.parentNode.insertBefore(s, t);
+    })();
+/* ]]> */
+</script>
+<link rel="stylesheet" href="style.css" type="text/css" />
+<link rel="stylesheet" type="text/css" href="rst.css" />
+<style type="text/css">
+/* Hides from IE-mac \*/
+* html pre { height: 1%; }
+/* End hide from IE-mac */
+</style>
+</head>
+<body>
+<div class="document" id="libtorrent-python-binding">
+    <div id="container">
+    <a href="index.html"><table id="header">
+    <tr><td id="orange"></td>
+    <td id="logo">libtorrent</td></tr>
+    </table></a>
+    <div id="main">
+<h1 class="title">libtorrent python binding</h1>
+<table class="docinfo" frame="void" rules="none">
+<col class="docinfo-name" />
+<col class="docinfo-content" />
+<tbody valign="top">
+<tr><th class="docinfo-name">Author:</th>
+<td>Arvid Norberg, <a class="last reference external" href="mailto:arvid&#64;libtorrent.org">arvid&#64;libtorrent.org</a></td></tr>
+<tr><th class="docinfo-name">Version:</th>
+<td>1.2.2</td></tr>
+</tbody>
+</table>
+<div class="contents topic" id="table-of-contents">
+<p class="topic-title first">Table of contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#building" id="id4">building</a><ul>
+<li><a class="reference internal" href="#building-using-boost-build-windows" id="id5">building using boost build (windows)</a></li>
+<li><a class="reference internal" href="#building-using-boost-build-others" id="id6">building using boost build (others)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#using-libtorrent-in-python" id="id7">using libtorrent in python</a></li>
+</ul>
+</div>
+<div class="section" id="building">
+<h1>building</h1>
+<p>Building the libtorrent python bindings will produce a shared library (DLL)
+which is a python module that can be imported in a python program.</p>
+<div class="section" id="building-using-boost-build-windows">
+<h2>building using boost build (windows)</h2>
+<p>Download and install <a class="reference external" href="http://landinghub.visualstudio.com/visual-cpp-build-tools">Visual C++ 2015 Build Tools</a></p>
+<p>Download <a class="reference external" href="http://www.boost.org/users/history/">Boost libraries</a> Extract it to c:/Libraries/boost_1_63_0 and create these environmental vars:</p>
+<ol class="arabic simple">
+<li>BOOST_BUILD_PATH: &quot;c:/Libraries/boost_1_63_0/tools/build/&quot;</li>
+<li>BOOST_ROOT: &quot;c:/Libraries/boost_1_63_0/&quot;</li>
+</ol>
+<p>Navigate to BOOST_ROOT, execute &quot;bootstrap.bat&quot; and add to the path &quot;c:/Libraries/boost_1_63_0/tools/build/src/engine/bin.ntx86/&quot;</p>
+<p>Move the file <tt class="docutils literal"><span class="pre">user-config.jam</span></tt> from <tt class="docutils literal"><span class="pre">%BOOST_BUILD_PATH%/example/</span></tt> to <tt class="docutils literal"><span class="pre">%BOOST_BUILD_PATH%/user-config.jam</span></tt> and add this at the end:</p>
+<pre class="literal-block">
+using msvc : 14.0 : : /std:c++11 ;
+using python : 3.5 : C:/Users/&lt;UserName&gt;/AppData/Local/Programs/Python/Python35 : C:/Users/&lt;UserName&gt;/AppData/Local/Programs/Python/Python35/include : C:/Users/&lt;UserName&gt;/AppData/Local/Programs/Python/Python35/libs ;
+</pre>
+<p>(change the python path for yours)</p>
+<dl class="docutils">
+<dt>Navigate to bindings/python and execute::</dt>
+<dd>python setup.py build --bjam</dd>
+</dl>
+<p>Note: If you are using 64 bits python you should edit setup.py and add this to the b2 command:
+<tt class="docutils literal"><span class="pre">address-model=64</span></tt></p>
+<p>This will create the file libtorrent.pyd inside build/lib/ that contains the binding.</p>
+</div>
+<div class="section" id="building-using-boost-build-others">
+<h2>building using boost build (others)</h2>
+<p>To set up your build environment, you need to add some settings to your
+<tt class="docutils literal"><span class="pre">$BOOST_BUILD_PATH/user-config.jam</span></tt>.</p>
+<p>A similar line to this line should be in the file (could be another python version):</p>
+<pre class="literal-block">
+#using python : 2.3 ;
+</pre>
+<p>Uncomment it and change it with the version of python you have installed or want to use. If
+you've installed python in a non-standard location, you have to add the prefix
+path used when you installed python as a second option. Like this:</p>
+<pre class="literal-block">
+using python : 2.6 : /usr/bin/python2.6 : /usr/include/python2.6 : /usr/lib/python2.6 ;
+</pre>
+<p>The bindings require <em>at least</em> python version 2.2.</p>
+<p>For more information on how to install and set up boost-build, see the
+<a class="reference external" href="building.html#step-2-setup-bbv2">building libtorrent</a> section.</p>
+<p>Once you have boost-build set up, you cd to the <tt class="docutils literal">bindings/python</tt>
+directory and invoke <tt class="docutils literal">bjam</tt> with the appropriate settings. For the available
+build variants, see <a class="reference external" href="building.html#step-3-building-libtorrent">libtorrent build options</a>.</p>
+<p>For example:</p>
+<pre class="literal-block">
+$ bjam dht-support=on link=static
+</pre>
+<p>On Mac OS X, this will produce the following python module:</p>
+<pre class="literal-block">
+bin/darwin-4.0/release/dht-support-on/link-static/logging-none/threading-multi/libtorrent.so
+</pre>
+</div>
+</div>
+<div class="section" id="using-libtorrent-in-python">
+<h1>using libtorrent in python</h1>
+<p>The python interface is nearly identical to the C++ interface. Please refer to
+the <a class="reference external" href="reference.html">library reference</a>. The main differences are:</p>
+<dl class="docutils">
+<dt>asio::tcp::endpoint</dt>
+<dd>The endpoint type is represented as a tuple of a string (as the address) and an int for
+the port number. E.g. <tt class="docutils literal">(&quot;127.0.0.1&quot;, 6881)</tt> represents the localhost port 6881.</dd>
+<dt>lt::time_duration</dt>
+<dd>The time duration is represented as a number of seconds in a regular integer.</dd>
+</dl>
+<p>The following functions takes a reference to a container that is filled with
+entries by the function. The python equivalent of these functions instead returns
+a list of entries.</p>
+<ul class="simple">
+<li>torrent_handle::get_peer_info</li>
+<li>torrent_handle::file_progress</li>
+<li>torrent_handle::get_download_queue</li>
+<li>torrent_handle::piece_availability</li>
+</ul>
+<p><tt class="docutils literal"><span class="pre">create_torrent::add_node()</span></tt> takes two arguments, one string and one integer,
+instead of a pair. The string is the address and the integer is the port.</p>
+<p><tt class="docutils literal"><span class="pre">session::apply_settings()</span></tt> accepts a dictionary with keys matching the names
+of settings in settings_pack.
+When calling <tt class="docutils literal">apply_settings</tt>, the dictionary does not need to have every settings set,
+keys that are not present are not updated.</p>
+<p>To get a python dictionary of the settings, call <tt class="docutils literal"><span class="pre">session::get_settings</span></tt>.</p>
+<p>Retrieving session statistics in Python is more convenient than that in C++.
+The statistics are stored as an array in <tt class="docutils literal">session_stats_alert</tt>, which will be posted after calling <tt class="docutils literal">post_session_stats()</tt> in the <tt class="docutils literal">session</tt> object.
+In order to interpret the statistics array, in C++ it is required to call <tt class="docutils literal">session_stats_metrics()</tt> to get the indices of these metrics, while in Python it can be done using <tt class="docutils literal"><span class="pre">session_stats_alert.values[&quot;NAME_OF_METRIC&quot;]</span></tt>, where <tt class="docutils literal">NAME_OF_METRIC</tt> is the name of a metric.</p>
+<p>For an example python program, see <tt class="docutils literal">client.py</tt> in the <tt class="docutils literal">bindings/python</tt>
+directory.</p>
+<p>A very simple example usage of the module would be something like this:</p>
+<pre class="code python literal-block">
+<span class="keyword namespace">import</span> <span class="name namespace">libtorrent</span> <span class="keyword namespace">as</span> <span class="name namespace">lt</span>
+<span class="keyword namespace">import</span> <span class="name namespace">time</span>
+<span class="keyword namespace">import</span> <span class="name namespace">sys</span>
+
+<span class="name">ses</span> <span class="operator">=</span> <span class="name">lt</span><span class="operator">.</span><span class="name">session</span><span class="punctuation">({</span><span class="literal string single">'listen_interfaces'</span><span class="punctuation">:</span> <span class="literal string single">'0.0.0.0:6881'</span><span class="punctuation">})</span>
+
+<span class="name">info</span> <span class="operator">=</span> <span class="name">lt</span><span class="operator">.</span><span class="name">torrent_info</span><span class="punctuation">(</span><span class="name">sys</span><span class="operator">.</span><span class="name">argv</span><span class="punctuation">[</span><span class="literal number integer">1</span><span class="punctuation">])</span>
+<span class="name">h</span> <span class="operator">=</span> <span class="name">ses</span><span class="operator">.</span><span class="name">add_torrent</span><span class="punctuation">({</span><span class="literal string single">'ti'</span><span class="punctuation">:</span> <span class="name">info</span><span class="punctuation">,</span> <span class="literal string single">'save_path'</span><span class="punctuation">:</span> <span class="literal string single">'.'</span><span class="punctuation">})</span>
+<span class="name">s</span> <span class="operator">=</span> <span class="name">h</span><span class="operator">.</span><span class="name">status</span><span class="punctuation">()</span>
+<span class="keyword">print</span><span class="punctuation">(</span><span class="literal string single">'starting'</span><span class="punctuation">,</span> <span class="name">s</span><span class="operator">.</span><span class="name">name</span><span class="punctuation">)</span>
+
+<span class="keyword">while</span> <span class="punctuation">(</span><span class="operator word">not</span> <span class="name">s</span><span class="operator">.</span><span class="name">is_seeding</span><span class="punctuation">):</span>
+    <span class="name">s</span> <span class="operator">=</span> <span class="name">h</span><span class="operator">.</span><span class="name">status</span><span class="punctuation">()</span>
+
+    <span class="keyword">print</span><span class="punctuation">(</span><span class="literal string single">'</span><span class="literal string escape">\r</span><span class="literal string interpol">%.2f%%</span><span class="literal string single"> complete (down: </span><span class="literal string interpol">%.1f</span><span class="literal string single"> kB/s up: </span><span class="literal string interpol">%.1f</span><span class="literal string single"> kB/s peers: </span><span class="literal string interpol">%d</span><span class="literal string single">) </span><span class="literal string interpol">%s</span><span class="literal string single">'</span> <span class="operator">%</span> <span class="punctuation">(</span>
+        <span class="name">s</span><span class="operator">.</span><span class="name">progress</span> <span class="operator">*</span> <span class="literal number integer">100</span><span class="punctuation">,</span> <span class="name">s</span><span class="operator">.</span><span class="name">download_rate</span> <span class="operator">/</span> <span class="literal number integer">1000</span><span class="punctuation">,</span> <span class="name">s</span><span class="operator">.</span><span class="name">upload_rate</span> <span class="operator">/</span> <span class="literal number integer">1000</span><span class="punctuation">,</span>
+        <span class="name">s</span><span class="operator">.</span><span class="name">num_peers</span><span class="punctuation">,</span> <span class="name">s</span><span class="operator">.</span><span class="name">state</span><span class="punctuation">),</span> <span class="name">end</span><span class="operator">=</span><span class="literal string single">' '</span><span class="punctuation">)</span>
+
+    <span class="name">alerts</span> <span class="operator">=</span> <span class="name">ses</span><span class="operator">.</span><span class="name">pop_alerts</span><span class="punctuation">()</span>
+    <span class="keyword">for</span> <span class="name">a</span> <span class="operator word">in</span> <span class="name">alerts</span><span class="punctuation">:</span>
+        <span class="keyword">if</span> <span class="name">a</span><span class="operator">.</span><span class="name">category</span><span class="punctuation">()</span> <span class="operator">&amp;</span> <span class="name">lt</span><span class="operator">.</span><span class="name">alert</span><span class="operator">.</span><span class="name">category_t</span><span class="operator">.</span><span class="name">error_notification</span><span class="punctuation">:</span>
+            <span class="keyword">print</span><span class="punctuation">(</span><span class="name">a</span><span class="punctuation">)</span>
+
+    <span class="name">sys</span><span class="operator">.</span><span class="name">stdout</span><span class="operator">.</span><span class="name">flush</span><span class="punctuation">()</span>
+
+    <span class="name">time</span><span class="operator">.</span><span class="name">sleep</span><span class="punctuation">(</span><span class="literal number integer">1</span><span class="punctuation">)</span>
+
+<span class="keyword">print</span><span class="punctuation">(</span><span class="name">h</span><span class="operator">.</span><span class="name">name</span><span class="punctuation">(),</span> <span class="literal string single">'complete'</span><span class="punctuation">)</span>
+</pre>
+</div>
+
+    </div>
+    </div>
+    <div id="gradient"></div>
+    <div id="footer">
+    <table>
+    <tr>
+      <td><a href="index.html">home</a></td>
+      <td><a href="https://blog.libtorrent.org">blog</a></td>
+      <td><a href="utp.html">uTP</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://sourceforge.net/projects/libtorrent/files/libtorrent/">download</a></td>
+      <td><a href="reference.html">documentation</a></td>
+      <td><a href="dht_store.html">DHT put extension</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://sourceforge.net/projects/libtorrent/files/py-libtorrent/">python bindings</a></td>
+      <td><a href="features.html">features</a></td>
+      <td><a href="dht_sec.html">DHT security extension</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://sourceforge.net/p/libtorrent/mailman/libtorrent-discuss/">mailing list archive</a></td>
+      <td><a href="contributing.html">contributing</a></td>
+      <td><a href="streaming.html">streaming</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/arvidn/libtorrent/issues">report a bug</a></td>
+      <td><a href="building.html">building</a></td>
+      <td><a href="bittorrent.pdf">bittorrent slides</a></td>
+    </tr>
+    </table>
+    </div>
+    <div id="filler"></div>
+
+</div>
+</body>
+</html>

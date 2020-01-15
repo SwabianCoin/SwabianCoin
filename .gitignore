@@ -1,0 +1,7 @@
+/cmake-build-debug/
+/cmake-build-debug-ccache/
+/cmake-build-release-ccache/
+/.idea/
+/cmake-build-debug-visual-studio/
+/cmake-build-debug-mingw/
+/build/

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.14: http://docutils.sourceforge.net/" />
+<title>fuzzing libtorrent</title>
+<meta name="author" content="Arvid Norberg, arvid&#64;libtorrent.org" />
+<meta name=viewport content="width=device-width, initial-scale=1">
+<script type="text/javascript">
+/* <![CDATA[ */
+    (function() {
+        var s = document.createElement('script'), t = document.getElementsByTagName('script')[0];
+        s.type = 'text/javascript';
+        s.async = true;
+        s.src = 'https://api.flattr.com/js/0.6/load.js?mode=auto';
+        t.parentNode.insertBefore(s, t);
+    })();
+/* ]]> */
+</script>
+<link rel="stylesheet" href="style.css" type="text/css" />
+<link rel="stylesheet" type="text/css" href="rst.css" />
+<style type="text/css">
+/* Hides from IE-mac \*/
+* html pre { height: 1%; }
+/* End hide from IE-mac */
+</style>
+</head>
+<body>
+<div class="document" id="fuzzing-libtorrent">
+    <div id="container">
+    <a href="index.html"><table id="header">
+    <tr><td id="orange"></td>
+    <td id="logo">libtorrent</td></tr>
+    </table></a>
+    <div id="main">
+<h1 class="title">fuzzing libtorrent</h1>
+<table class="docinfo" frame="void" rules="none">
+<col class="docinfo-name" />
+<col class="docinfo-content" />
+<tbody valign="top">
+<tr><th class="docinfo-name">Author:</th>
+<td>Arvid Norberg, <a class="last reference external" href="mailto:arvid&#64;libtorrent.org">arvid&#64;libtorrent.org</a></td></tr>
+<tr><th class="docinfo-name">Version:</th>
+<td>2.0.0</td></tr>
+</tbody>
+</table>
+<div class="contents topic" id="table-of-contents">
+<p class="topic-title first">Table of contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#overview" id="id1">overview</a></li>
+</ul>
+</div>
+<div class="section" id="overview">
+<h1>overview</h1>
+<p>Libtorrent comes with a set of fuzzers. They are not included in the distribution
+tar ball, instead download the <a class="reference external" href="https://github.com/arvidn/libtorrent/releases">repository snapshot</a> or clone the <a class="reference external" href="https://github.com/arvidn/libtorrent">repository</a>.</p>
+<p>The fuzzers can be found in the <cite>fuzzers</cite> subdirectory and come with a <cite>Jamfile</cite>
+to build them, and a <cite>run.sh</cite> bash script to run them.</p>
+<div class="section" id="building">
+<h2>building</h2>
+<p>The fuzzers use clang's libFuzzer, which means they can only be built with clang.
+Clang must be configured in your <cite>user-config.jam</cite>, for example:</p>
+<pre class="literal-block">
+using clang : 7 : clang++-7 ;
+</pre>
+<p>When building, you most likely want to stage the resulting binaries into a
+well known location. Invoke <cite>b2</cite> like this:</p>
+<pre class="literal-block">
+b2 clang stage -j$(nproc)
+</pre>
+<p>This will build and stage all fuzzers into the <cite>fuzzers/fuzzers</cite> directory.</p>
+</div>
+<div class="section" id="corpus">
+<h2>corpus</h2>
+<p>Fuzzers work best if they have a relevant seed corpus of example inputs. You
+can either generate one using <cite>fuzzers/tools/generate_initial_corpus.py</cite> or download
+the <cite>corpus.zip</cite> from the github <a class="reference external" href="https://github.com/arvidn/libtorrent/releases">releases page</a>.</p>
+<p>To run the script to generate initial corpus, run it with <cite>fuzzers</cite> as the
+current working directory, like this:</p>
+<pre class="literal-block">
+python tools/generate_initial_corpus.py
+</pre>
+<p>The corpus should be placed in the <cite>fuzzers</cite> directory, which should also be the
+current working directory when invoking the fuzzer binaries.</p>
+</div>
+<div class="section" id="running-fuzzers">
+<h2>running fuzzers</h2>
+<p>The <cite>run.sh</cite> script will run all fuzzers in parallel for 48 hours. It can easily
+be tweaked and mostly serve as an example of how to invoke them.</p>
+</div>
+<div class="section" id="large-and-small-fuzzers">
+<h2>large and small fuzzers</h2>
+<p>Since APIs can have different complexity, fuzz targets will also explore
+code of varying complexity. Some fuzzers cover a very small amount of code
+(e.g. <cite>parse_int</cite>) where other fuzz targets cover very large amount of code and
+can potentially go very deep into call stacks (e.g. <cite>torrent_info</cite>).</p>
+<p>Small fuzz targets can fairly quickly exhaust all possible code paths and have
+quite limited utility after that, other than as regression tests. When putting
+a lot of CPU into long running fuzzing, it is better spent on large fuzz targets.</p>
+<p>For this reason, there's another alias in the <cite>Jamfile</cite> to only build and stage
+large fuzz targets. Call <cite>b2</cite> like this:</p>
+<pre class="literal-block">
+b2 clang stage-large -j$(nproc)
+</pre>
+</div>
+<div class="section" id="fast-slow">
+<h2>fast+slow</h2>
+<p>When building an initial corpus, it can be useful to quickly build a corpus with
+a large code coverage. To speed up this process, you can build the fuzzers
+without sanitizers, asserts and invariant checks. This won't find as many errors,
+but build a good corpus which can then be run against a fully instrumented
+fuzzer.</p>
+<p>To build the fuzzers in this &quot;fast&quot; mode, there's a build variant <cite>build_coverage</cite>.
+Invoke <cite>b2</cite> like this:</p>
+<pre class="literal-block">
+b2 clang stage build_coverage -j$(nproc)
+</pre>
+<p>For more details on &quot;fast + slow&quot; see <a class="reference external" href="https://youtu.be/e_Oc9SkCo5s?t=1679">Paul Dreik's talk</a>.</p>
+</div>
+<div class="section" id="sharing-corpora">
+<h2>sharing corpora</h2>
+<p>Before sharing your fuzz corpus, it should be minimized. There is a script
+called <cite>minimize.sh</cite> which moves <cite>corpus</cite> to <cite>prev-corpus</cite> and copies over
+a minimized set of inputs to a new <cite>corpus</cite> directory.</p>
+</div>
+</div>
+
+    </div>
+    </div>
+    <div id="gradient"></div>
+    <div id="footer">
+    <table>
+    <tr>
+      <td><a href="index.html">home</a></td>
+      <td><a href="https://blog.libtorrent.org">blog</a></td>
+      <td><a href="utp.html">uTP</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://sourceforge.net/projects/libtorrent/files/libtorrent/">download</a></td>
+      <td><a href="reference.html">documentation</a></td>
+      <td><a href="dht_store.html">DHT put extension</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://sourceforge.net/projects/libtorrent/files/py-libtorrent/">python bindings</a></td>
+      <td><a href="features.html">features</a></td>
+      <td><a href="dht_sec.html">DHT security extension</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://sourceforge.net/p/libtorrent/mailman/libtorrent-discuss/">mailing list archive</a></td>
+      <td><a href="contributing.html">contributing</a></td>
+      <td><a href="streaming.html">streaming</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/arvidn/libtorrent/issues">report a bug</a></td>
+      <td><a href="building.html">building</a></td>
+      <td><a href="bittorrent.pdf">bittorrent slides</a></td>
+    </tr>
+    </table>
+    </div>
+    <div id="filler"></div>
+
+</div>
+</body>
+</html>
