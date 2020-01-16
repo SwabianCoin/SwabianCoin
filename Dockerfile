@@ -1,7 +1,7 @@
 FROM ubuntu:18.04
 
 RUN apt-get update --fix-missing
-RUN apt-get install -y --allow-unauthenticated wget libboost-all-dev libssl-dev libgoogle-glog-dev
+RUN apt-get install -y --allow-unauthenticated wget libboost-all-dev libssl-dev libgoogle-glog-dev libcurl4-openssl-dev
 
 WORKDIR /tmp
 
