@@ -26,7 +26,8 @@ namespace scn {
         P2PConnectorStub()
         :num_connected_peers(10)
         ,callback_baseline_(NULL)
-        ,callback_collection_(NULL) {};
+        ,callback_collection_(NULL)
+        ,callback_active_peers_(NULL) {};
 
         virtual ~P2PConnectorStub() {};
 
@@ -48,6 +49,10 @@ namespace scn {
             callback_collection_ = callback_collection;
         }
 
+        virtual void registerActivePeersCallback(std::function<void(IPeer&, const ActivePeersList&)> callback_active_peers) {
+            callback_active_peers_ = callback_active_peers;
+        }
+
         virtual void askForBlock(block_uid_t uid) {
             ask_for_block_counter_++;
             ask_for_block_uid_ = uid;
@@ -65,14 +70,20 @@ namespace scn {
             propagate_collection_block_counter_++;
         }
 
+        virtual void propagateActivePeersList(const ActivePeersList& active_peers_list) {
+            propagate_active_peers_list_counter_++;
+        }
+
         uint32_t num_connected_peers;
         std::function<void(IPeer&, const BaselineBlock&,bool)> callback_baseline_;
         std::function<void(IPeer&, const CollectionBlock&,bool)> callback_collection_;
+        std::function<void(IPeer&, const ActivePeersList&)> callback_active_peers_;
 
         uint32_t ask_for_block_counter_;
         uint32_t ask_for_last_baseline_block_counter_;
         uint32_t propagate_baseline_block_counter_;
         uint32_t propagate_collection_block_counter_;
+        uint32_t propagate_active_peers_list_counter_;
         block_uid_t ask_for_block_uid_;
     };
 

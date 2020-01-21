@@ -33,7 +33,8 @@ P2PConnector::P2PConnector(uint16_t port, const Blockchain& blockchain)
 , running_(true)
 , peer_sending_baseline_to_(nullptr)
 , callback_baseline_(nullptr)
-, callback_collection_(nullptr) {
+, callback_collection_(nullptr)
+, callback_active_peers_(nullptr) {
     LOG(INFO) << "Listen on port " << port;
     std::srand(std::time(nullptr));
 
@@ -134,6 +135,11 @@ void P2PConnector::registerBlockCallbacks(std::function<void(IPeer&, const Basel
 }
 
 
+void P2PConnector::registerActivePeersCallback(std::function<void(IPeer&, const ActivePeersList&)> callback_active_peers) {
+    callback_active_peers_ = callback_active_peers;
+}
+
+
 void P2PConnector::askForBlock(block_uid_t uid) {
     std::stringstream oss;
     cereal::PortableBinaryOutputArchive oa(oss);
@@ -197,6 +203,23 @@ void P2PConnector::propagateBlock(const CollectionBlock& block) {
     oa << (uint8_t)type;
     oa << block;
     oa << reply;
+    LOCK_MUTEX_WATCHDOG(mtx_access_peers_);
+    auto output = std::make_shared<std::string>(std::move(oss.str()));
+    for(auto& peer : peers_) {
+        if(peer != peer_sending_baseline_to_) {
+            peer->sendMessage(output);
+        }
+    }
+}
+
+
+void P2PConnector::propagateActivePeersList(const ActivePeersList& active_peers_list) {
+    std::stringstream oss;
+    cereal::PortableBinaryOutputArchive oa(oss);
+    const MessageType type = MessageType::PropagateActivePeersList;
+    oa << protocol_version_;
+    oa << (uint8_t)type;
+    oa << active_peers_list;
     LOCK_MUTEX_WATCHDOG(mtx_access_peers_);
     auto output = std::make_shared<std::string>(std::move(oss.str()));
     for(auto& peer : peers_) {
@@ -359,6 +382,14 @@ void P2PConnector::receivedMessage(libtorrent::IPeer& peer, const std::string& m
                     }
                 } else {
                     LOG(INFO) << "could not get AskForBlock answer";
+                }
+                break;
+            }
+            case MessageType::PropagateActivePeersList: {
+                if (callback_active_peers_ != nullptr) {
+                    ActivePeersList list;
+                    ia >> list;
+                    callback_active_peers_(peer, list);
                 }
                 break;
             }

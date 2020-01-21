@@ -53,6 +53,8 @@ namespace scn {
         virtual void registerBlockCallbacks(std::function<void(IPeer&, const BaselineBlock&,bool)> callback_baseline,
                                             std::function<void(IPeer&, const CollectionBlock&,bool)> callback_collection) override;
 
+        virtual void registerActivePeersCallback(std::function<void(IPeer&, const ActivePeersList&)> callback_active_peers) override;
+
         virtual void askForBlock(block_uid_t uid) override;
 
         virtual void askForLastBaselineBlock() override;
@@ -60,6 +62,8 @@ namespace scn {
         virtual void propagateBlock(const BaselineBlock& block) override;
 
         virtual void propagateBlock(const CollectionBlock& block) override;
+
+        virtual void propagateActivePeersList(const ActivePeersList& active_peers_list) override;
 
         virtual bool peerSendBuffersEmpty();
 
@@ -90,6 +94,7 @@ namespace scn {
 
         std::function<void(IPeer&, const BaselineBlock&,bool)> callback_baseline_;
         std::function<void(IPeer&, const CollectionBlock&,bool)> callback_collection_;
+        std::function<void(IPeer&, const ActivePeersList&)> callback_active_peers_;
     };
 
 }

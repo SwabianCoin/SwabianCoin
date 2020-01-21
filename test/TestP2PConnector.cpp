@@ -31,6 +31,7 @@ public:
     ,last_received_collection_block(nullptr) {
         p2p_connector_.registerBlockCallbacks(std::bind(&TestP2PConnector::baselineBlockReceivedCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
                                               std::bind(&TestP2PConnector::collectionBlockReceivedCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+        p2p_connector_.registerActivePeersCallback(std::bind(&TestP2PConnector::activePeersListReceivedCallback, this, std::placeholders::_1, std::placeholders::_2));
         p2p_connector_.connect();
     }
 
@@ -71,6 +72,22 @@ public:
         serialized_block = oss.str();
     }
 
+    void createSimpleActivePeersList(ActivePeersList& active_peers_list, std::string& serialized_list) {
+        //create list
+        active_peers_list.active_peers_bloom_filter.clear();
+        active_peers_list.active_peers_bloom_filter.insertHash(123);
+        active_peers_list.active_peers_bloom_filter.insertHash(456);
+        active_peers_list.active_peers_bloom_filter.insertHash(789);
+
+        //serialize block
+        std::stringstream oss;
+        cereal::PortableBinaryOutputArchive oa(oss);
+        oa << (uint16_t)1; //protocol version
+        oa << (uint8_t)7; //PropagateActivePeersList
+        oa << active_peers_list;
+        serialized_list = oss.str();
+    }
+
 protected:
     void baselineBlockReceivedCallback(IPeer& peer, const BaselineBlock& block, bool reply) {
         last_received_baseline_block = std::make_shared<BaselineBlock>(block);
@@ -80,12 +97,17 @@ protected:
         last_received_collection_block = std::make_shared<CollectionBlock>(block);
     }
 
+    void activePeersListReceivedCallback(IPeer& peer, const ActivePeersList& active_peers_list) {
+        last_received_active_peers_list = std::make_shared<ActivePeersList>(active_peers_list);
+    }
+
     PeerStub dummy_peer_;
     Blockchain blockchain_;
     P2PConnector p2p_connector_;
 
     std::shared_ptr<BaselineBlock> last_received_baseline_block;
     std::shared_ptr<CollectionBlock> last_received_collection_block;
+    std::shared_ptr<ActivePeersList> last_received_active_peers_list;
 };
 
 
@@ -292,4 +314,34 @@ TEST_F(TestP2PConnector, receiveNonsense) {
     //give serialized block to p2p connector
     EXPECT_NO_FATAL_FAILURE(p2p_connector_.receivedMessage(dummy_peer_, nonsense_string));
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
+}
+
+
+TEST_F(TestP2PConnector, receiveValidActivePeersMessage) {
+    ActivePeersList list;
+    std::string serialized_list;
+    createSimpleActivePeersList(list, serialized_list);
+
+    //give serialized block to p2p connector
+    p2p_connector_.receivedMessage(dummy_peer_, serialized_list);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    //check if p2p connector passed message to observer
+    EXPECT_NE(last_received_active_peers_list, nullptr);
+    EXPECT_EQ(last_received_active_peers_list->active_peers_bloom_filter.findHash(123), true);
+}
+
+TEST_F(TestP2PConnector, receiveInvalidActivePeersMessage) {
+    ActivePeersList list;
+    std::string serialized_list;
+    createSimpleActivePeersList(list, serialized_list);
+
+    std::string modified_serialized_list = serialized_list.substr(0, serialized_list.length()-2);
+
+    //give serialized block to p2p connector
+    p2p_connector_.receivedMessage(dummy_peer_, modified_serialized_list);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    //check if p2p connector passed message to observer
+    EXPECT_EQ(last_received_active_peers_list, nullptr);
 }

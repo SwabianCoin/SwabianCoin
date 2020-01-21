@@ -26,6 +26,7 @@
 #include "scn/Miner/IMiner.h"
 #include "scn/BlockchainManager/OutOfSyncDetector.h"
 #include "scn/BlockchainManager/PeersMonitor.h"
+#include "scn/BlockchainManager/ActivePeersCollector.h"
 #include "scn/BlockchainManager/ICycleState.h"
 #include "scn/BlockchainManager/CycleStateFetchBlockchain.h"
 #include "scn/BlockchainManager/CycleStateCollect.h"
@@ -62,6 +63,8 @@ namespace scn {
 
         virtual uint8_t percentBlockchainSynchronized() const;
 
+        virtual uint64_t getTotalPeersEstimation() const;
+
         static bool isBaselineBlock(block_uid_t block_uid);
 
         static block_uid_t getNextBaselineBlock(block_uid_t block_uid);
@@ -97,6 +100,7 @@ namespace scn {
 
         OutOfSyncDetector out_of_sync_detector_;
         PeersMonitor peers_monitor_;
+        ActivePeersCollector active_peers_collector_;
 
         CycleStateFetchBlockchain cycle_state_fetch_blockchain_;
         CycleStateCollect cycle_state_collect_;

@@ -38,6 +38,7 @@ BlockchainManager::BlockchainManager(public_key_t our_public_key,
 , initial_fetch_(initial_fetch)
 , out_of_sync_detector_()
 , peers_monitor_(sync_timer_)
+, active_peers_collector_(p2p_connector_, our_public_key_)
 , cycle_state_fetch_blockchain_(*this)
 , cycle_state_collect_(*this)
 , cycle_state_introduce_block_(*this)
@@ -117,6 +118,11 @@ uint8_t BlockchainManager::percentBlockchainSynchronized() const {
 }
 
 
+uint64_t BlockchainManager::getTotalPeersEstimation() const {
+    return active_peers_collector_.getActivePeers();
+}
+
+
 bool BlockchainManager::isBaselineBlock(block_uid_t block_uid) {
     return ((block_uid-1) % max_num_blocks_after_baseline_) == 0;
 }
@@ -179,6 +185,7 @@ void BlockchainManager::updateStateThread() {
     }
 
     resumeMiner();
+    active_peers_collector_.restartListBuilding();
 
     blockchain_time_t cycle_length_ms = 120000;
     auto time_next_state_change = (sync_timer_.now() / cycle_length_ms) * cycle_length_ms + (cycle_length_ms/4);
@@ -218,6 +225,7 @@ void BlockchainManager::updateStateThread() {
         if(out_of_sync_detector_.isOutOfSync() || time_violation_detected) {
             LOG(ERROR) << "Blockchain out of sync detected!" << (time_violation_detected ? " Time violation." : "");
             fetchBlockchain();
+            active_peers_collector_.restartListBuilding();
             time_next_state_change = (sync_timer_.now() / cycle_length_ms) * cycle_length_ms + (cycle_length_ms/4);
         }
     }

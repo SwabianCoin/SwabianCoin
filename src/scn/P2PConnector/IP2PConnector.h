@@ -40,6 +40,8 @@ namespace scn {
         virtual void registerBlockCallbacks(std::function<void(IPeer&, const BaselineBlock&,bool)> callback_baseline,
                                             std::function<void(IPeer&, const CollectionBlock&,bool)> callback_collection) = 0;
 
+        virtual void registerActivePeersCallback(std::function<void(IPeer&, const ActivePeersList&)> callback_active_peers) = 0;
+
         virtual void askForBlock(block_uid_t uid) = 0;
 
         virtual void askForLastBaselineBlock() = 0;
@@ -47,6 +49,8 @@ namespace scn {
         virtual void propagateBlock(const BaselineBlock& block) = 0;
 
         virtual void propagateBlock(const CollectionBlock& block) = 0;
+
+        virtual void propagateActivePeersList(const ActivePeersList& active_peers_list) = 0;
     };
 
 }

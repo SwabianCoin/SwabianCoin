@@ -8,7 +8,7 @@
 
  - [Key Features](#key-features)
  - [Links](#links)
- - [Usage](#usage)
+ - [Quick Start](#quick-start)
  - [Technical Documentation](#technical-documentation)
  - [Compiling from source](#compiling-from-source)
 
@@ -39,26 +39,33 @@ The name SwabianCoin is a devoted tribute to the home country of the creators of
  - Web: [https://www.swabiancoin.com](https://www.swabiancoin.com)
  - Mail: <swabiancoin@gmail.com>
 
-## Usage
+## Quick Start
 
-### Wallet generation
+This quick start section shows how to mine SwabianCoins on **Ubuntu 18.04**.
 
-Your personal wallet is a private key which is generated like this:
+### Generate wallet
+
+Your personal wallet is a key pair which is generated like this:
 ```
 openssl ecparam -name secp256k1 -genkey -noout -out private-key.pem
-```
-
-The public key is extracted like this:
-```
 openssl ec -in private-key.pem -pubout -out public-key.pem
+```
+Note: Be careful with your private key since this key represents your wallet. Take care that you do not loose it and do not share it with other people.
+
+### Install
+
+The easiest way is to download and use precompiled debian packages:
+```
+wget https://github.com/SwabianCoin/SwabianCoin/releases/download/v20.01.01/swabiancoin_20.01.1-1_amd64.deb
+sudo apt update && sudo apt install ./swabiancoin_20.01.1-1_amd64.deb
 ```
 
 ### Starting a node
+
+Start a new peer with 4 threads listening on port 13286:
 ```
-./full_node_cli public-key.pem private-key.pem NUM_MINING_THREADS PORT
+full_node_cli public-key.pem private-key.pem 4 13286
 ``` 
- - Replace NUM_MINING_THREADS with the number of threads you want to use for mining (default: 1). 
- - Replace PORT with the listen port you want to use (default: 13286). 
  
 Note: Although not necessary, it is generally a good idea to open this port or activate UPnP in your router settings to allow incoming connections.  
 

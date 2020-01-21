@@ -39,6 +39,11 @@ void CycleStateCollect::onEnter() {
     base_.new_block_.creations.clear();
     minings_in_cycle_ = 0;
     max_cycle_duration_ms_ = 0;
+
+    if(base_.blockchain_.getNewestBlockId() % ActivePeersCollector::blocks_to_collect_active_peers_ == 0) {
+        base_.active_peers_collector_.restartListBuilding();
+    }
+    base_.active_peers_collector_.propagate();
 }
 
 

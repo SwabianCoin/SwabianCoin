@@ -18,7 +18,9 @@
 #define FULL_NODE_P2PDEFINITIONS_H
 
 #include <stdint.h>
-#include <vector>
+#include <set>
+#include "scn/Common/Common.h"
+#include "scn/Common/BloomFilter.h"
 
 namespace scn {
 
@@ -26,7 +28,20 @@ namespace scn {
         PropagateBaselineBlock = 1,
         PropagateCollectionBlock = 2,
         AskForBlock = 5,
-        AskForLastBaselineBlock = 6
+        AskForLastBaselineBlock = 6,
+        PropagateActivePeersList = 7
+    };
+
+    struct ActivePeersList {
+        BloomFilter<8192> active_peers_bloom_filter;
+
+        ActivePeersList()
+        : active_peers_bloom_filter() {}
+
+        template<class Archive>
+        void ser(Archive& ar) {
+            ar & active_peers_bloom_filter;
+        }
     };
 
 }

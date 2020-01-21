@@ -27,6 +27,7 @@ include_directories(src/
         ${CURL_INCLUDE_DIRS})
 
 add_library(full_node_library
+        src/scn/Common/BloomFilter.cpp
         src/scn/Common/PublicKeyPEM.cpp
         src/scn/Miner/MinerLocal.cpp
         src/scn/Blockchain/Blockchain.cpp
@@ -39,6 +40,7 @@ add_library(full_node_library
         src/scn/BlockchainManager/CycleStateIntroduceBaseline.cpp
         src/scn/BlockchainManager/OutOfSyncDetector.cpp
         src/scn/BlockchainManager/PeersMonitor.cpp
+        src/scn/BlockchainManager/ActivePeersCollector.cpp
         src/scn/CryptoHelper/CryptoHelper.cpp
         src/scn/CryptoHelper/HashStreamBuf.cpp
         src/scn/P2PConnector/P2PConnector.cpp
@@ -92,7 +94,10 @@ if(BUILD_UNIT_TESTS)
             test/TestMiner.cpp
             test/TestBlockchain.cpp
             test/TestP2PConnector.cpp
+            test/TestBloomFilter.cpp
             )
     target_link_libraries(runTests full_node_library ${GTEST_LIBRARIES} pthread)
     target_compile_definitions(runTests PRIVATE CEREAL_SERIALIZE_FUNCTION_NAME=ser)
 endif()
+
+install(TARGETS full_node_cli DESTINATION bin)
