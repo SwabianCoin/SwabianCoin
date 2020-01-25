@@ -193,56 +193,56 @@ TEST_F(TestBlockchain, HashAreaCalculation) {
     hash_t max_allowed_hash, min_allowed_hash;
 
     Blockchain::getHashArea(1, max_allowed_hash, min_allowed_hash);
-    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex), "FF8BCFF3EDF1A8D2A0B4C276EA5769595237ADB6C2B194E46E60508026B3F88A");
-    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex), "FF17D4A36FD835FB55D7162AC718802635934A167AEBC33A24F3B15EC9E1D7EC");
+    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "FF8BCFF3EDF1A8D2A0B4C276EA5769595237ADB6C2B194E46E60508026B3F88A");
+    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "FF17D4A36FD835FB55D7162AC718802635934A167AEBC33A24F3B15EC9E1D7EC");
 
     Blockchain::getHashArea(2, max_allowed_hash, min_allowed_hash);
-    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex), "FF17D4A36FD835FB55D7162AC718802635934A167AEBC33A24F3B15EC9E1D7EB");
-    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex), "FEA40DF696CEF441A97C7A4364F3D15959B48EA4C4598F516C2A861391326FE8");
+    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "FF17D4A36FD835FB55D7162AC718802635934A167AEBC33A24F3B15EC9E1D7EB");
+    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "FEA40DF696CEF441A97C7A4364F3D15959B48EA4C4598F516C2A861391326FE8");
 
     Blockchain::getHashArea(10, max_allowed_hash, min_allowed_hash);
-    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex), "FB7F59513683B463ED042DE87F9A854A074FDF5D7DD21A51D9084BCAF6F4D29B");
-    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex), "FB0D346901428BCB7D1BDF4B3F20F6FF9B683A8A749BED1A609BB630AA3E046A");
+    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "FB7F59513683B463ED042DE87F9A854A074FDF5D7DD21A51D9084BCAF6F4D29B");
+    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "FB0D346901428BCB7D1BDF4B3F20F6FF9B683A8A749BED1A609BB630AA3E046A");
 
     Blockchain::getHashArea(100, max_allowed_hash, min_allowed_hash);
-    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex), "D66045854E95A666A09AC8A4DFC65C23CD709A96E6547A50601945233625E6F0");
-    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex), "D5FEF9A9A583027398B8E406D8FD3FAEE07A27922DBE6FF2917FFB2335DEC256");
+    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "D66045854E95A666A09AC8A4DFC65C23CD709A96E6547A50601945233625E6F0");
+    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "D5FEF9A9A583027398B8E406D8FD3FAEE07A27922DBE6FF2917FFB2335DEC256");
 
     Blockchain::getHashArea(1000, max_allowed_hash, min_allowed_hash);
-    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex), "2B694D7A8004BB80D67B6B87343ED2DA2A5CCAA60817ADB2B847D4050998E48A");
-    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex), "2B55999D99FC499FA805DDD45D78775E1F217405AFB3110EAF3987EF0E4CFA6A");
+    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "2B694D7A8004BB80D67B6B87343ED2DA2A5CCAA60817ADB2B847D4050998E48A");
+    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "2B55999D99FC499FA805DDD45D78775E1F217405AFB3110EAF3987EF0E4CFA6A");
 
     Blockchain::getHashArea(10000, max_allowed_hash, min_allowed_hash);
-    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex), "5472D14EE5C57F9ADF9C16F6669995B78C186971500CF8AE48EE0FF907");
-    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex), "544C7D6E8B6FF994450742B5B1351991323A12D41B062F69C0A33022B6");
+    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "5472D14EE5C57F9ADF9C16F6669995B78C186971500CF8AE48EE0FF907");
+    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "544C7D6E8B6FF994450742B5B1351991323A12D41B062F69C0A33022B6");
 
     Blockchain::getHashArea(50000, max_allowed_hash, min_allowed_hash);
-    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex), "1000000000717EE28BDCEB8D62AB0E5A5");
-    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex), "FF8BCFF3F5065ECEA1C697A964488DBB");
+    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "1000000000717EE28BDCEB8D62AB0E5A5");
+    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "FF8BCFF3F5065ECEA1C697A964488DBB");
 
     Blockchain::getHashArea(92536, max_allowed_hash, min_allowed_hash);
-    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex), "89DD9");
-    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex), "899F0");
+    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "89DD9");
+    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "899F0");
 
     Blockchain::getHashArea(92537, max_allowed_hash, min_allowed_hash);
-    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex), "899EF");
-    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex), "89608");
+    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "899EF");
+    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "89608");
 
     Blockchain::getHashArea(92538, max_allowed_hash, min_allowed_hash);
-    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex), "89607");
-    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex), "89222");
+    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "89607");
+    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "89222");
 
     Blockchain::getHashArea(95000, max_allowed_hash, min_allowed_hash);
-    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex), "1AC3");
-    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex), "1AB7");
+    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "1AC3");
+    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "1AB7");
 
     Blockchain::getHashArea(96755, max_allowed_hash, min_allowed_hash);
-    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex), "1");
-    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex), "1");
+    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "1");
+    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "1");
 
     Blockchain::getHashArea(96756, max_allowed_hash, min_allowed_hash);
-    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex), "0");
-    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex), "0");
+    EXPECT_EQ(max_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "0");
+    EXPECT_EQ(min_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "0");
 }
 
 

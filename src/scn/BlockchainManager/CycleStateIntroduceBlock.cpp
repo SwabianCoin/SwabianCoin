@@ -44,7 +44,7 @@ void CycleStateIntroduceBlock::onEnter() {
     base_.new_block_.header.generic_header.block_hash = 0;
     CryptoHelper::fillHash(base_.new_block_);
 
-    LOG(INFO) << "Propagate initial block: " << base_.new_block_.header.generic_header.block_hash.str(0, std::ios_base::hex);
+    LOG(INFO) << "Propagate initial block: " << base_.new_block_.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase);
     base_.p2p_connector_.propagateBlock(base_.new_block_);
     next_propagation_time_ = base_.sync_timer_.now() + time_between_propagations_ms_;
 }
@@ -53,7 +53,7 @@ void CycleStateIntroduceBlock::onEnter() {
 bool CycleStateIntroduceBlock::onCycle() {
     if(base_.sync_timer_.now() >= next_propagation_time_) {
         next_propagation_time_ += time_between_propagations_ms_;
-        LOG(INFO) << "Propagate updated block: " << base_.new_block_.header.generic_header.block_hash.str(0, std::ios_base::hex);
+        LOG(INFO) << "Propagate updated block: " << base_.new_block_.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase);
         base_.p2p_connector_.propagateBlock(base_.new_block_);
     }
     return false;
@@ -75,8 +75,8 @@ void CycleStateIntroduceBlock::onExit() {
         base_.resumeMiner();
     }
 
-    LOG(INFO) << "New Block " << base_.new_block_.header.block_uid << ": " << base_.new_block_.header.generic_header.block_hash.str(0, std::ios_base::hex);
-    LOG(INFO) << "      highest_hash_of_last_epoch: " << mining_state.highest_hash_of_last_epoch.str(0, std::ios_base::hex);
+    LOG(INFO) << "New Block " << base_.new_block_.header.block_uid << ": " << base_.new_block_.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase);
+    LOG(INFO) << "      highest_hash_of_last_epoch: " << mining_state.highest_hash_of_last_epoch.str(0, std::ios_base::hex | std::ios_base::uppercase);
     LOG(INFO) << "Balance: " << static_cast<double>(base_.blockchain_.getBalance(base_.our_public_key_)) /
             static_cast<double>(TransactionSubBlock::fraction_per_coin);
 }
@@ -88,7 +88,7 @@ void CycleStateIntroduceBlock::blockReceivedCallback(IPeer& peer, const Collecti
         base_.peers_monitor_.reportViolation(peer);
         return;
     }
-    LOG(INFO) << "CycleStateIntroduceBlock incoming block: " << block.header.generic_header.block_hash.str(0, std::ios_base::hex);
+    LOG(INFO) << "CycleStateIntroduceBlock incoming block: " << block.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase);
     if(block.header.block_uid != base_.new_block_.header.block_uid) {
         LOG(INFO) << "  Ignoring block (unexpected block id " << block.header.block_uid << ")";
     } else if(processed_blocks_.find(block.header.generic_header.block_hash) != processed_blocks_.end()) {
