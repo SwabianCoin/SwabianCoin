@@ -105,7 +105,7 @@ int startCommandLineApp(int argc, char* argv[]) {
                 auto num_worker_threads = miner.numWorkerThreads();
                 auto cps = miner.numChecksPerSecond();
                 std::cout << "Newest Block Index: " << block->header.block_uid << std::endl <<
-                          "Newest Block Hash: " << block->header.generic_header.block_hash.str(0, std::ios_base::hex) << std::endl <<
+                          "Newest Block Hash: " << block->header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase) << std::endl <<
                           "Balance: " << std::fixed << std::setprecision(6) << static_cast<double>(blockchain.getBalance(public_key)) /
                           static_cast<double>(scn::TransactionSubBlock::fraction_per_coin) << std::endl <<
                           "Peers: " << (num_peers>0 ? "\033[1;32m" : "\033[1;31m") << num_peers << "\033[0m" << "\t\t" <<

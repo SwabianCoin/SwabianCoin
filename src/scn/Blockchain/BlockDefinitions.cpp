@@ -21,8 +21,8 @@ using namespace scn;
 
 std::ostream& scn::operator<<(std::ostream& os, const BaseBlock& block) {
     os << "Block " << block.header.block_uid << std::endl;
-    os << "   hash: " << block.header.generic_header.block_hash.str(0, std::ios_base::hex) << std::endl;
-    os << "   previous_block_hash: " << block.header.generic_header.previous_block_hash.str(0, std::ios_base::hex)
+    os << "   hash: " << block.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase) << std::endl;
+    os << "   previous_block_hash: " << block.header.generic_header.previous_block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase)
        << std::endl;
     os << "   type: " << (uint32_t)block.header.generic_header.block_type << std::endl;
     return os;
@@ -39,7 +39,7 @@ std::ostream& scn::operator<<(std::ostream& os, const BaselineBlock& block) {
     for(uint32_t epoch = 0;epoch < block.data_value_hashes.size();epoch++) {
         os << "    epoch " << epoch << ": " << block.data_value_hashes[epoch].size() << std::endl;
         for(auto& data_value_hash : block.data_value_hashes[epoch]) {
-            os << "     " << data_value_hash.str(0, std::ios_base::hex) << std::endl;
+            os << "     " << data_value_hash.str(0, std::ios_base::hex | std::ios_base::uppercase) << std::endl;
         }
 
     }
@@ -64,8 +64,8 @@ std::ostream& scn::operator<<(std::ostream& os, const CollectionBlock& block) {
 
 std::ostream& scn::operator<<(std::ostream& os, const TransactionSubBlock& block) {
     os << "TransactionSubBlock " << std::endl;
-    os << "   hash: " << block.header.generic_header.block_hash.str(0, std::ios_base::hex) << std::endl;
-    os << "   previous_block_hash: " << block.header.generic_header.previous_block_hash.str(0, std::ios_base::hex)
+    os << "   hash: " << block.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase) << std::endl;
+    os << "   previous_block_hash: " << block.header.generic_header.previous_block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase)
        << std::endl;
     os << "   type: " << (uint32_t)block.header.generic_header.block_type << std::endl;
     os << "   fraction: " << block.fraction << std::endl;
@@ -78,8 +78,8 @@ std::ostream& scn::operator<<(std::ostream& os, const TransactionSubBlock& block
 
 std::ostream& scn::operator<<(std::ostream& os, const CreationSubBlock& block) {
     os << "CreationSubBlock " << std::endl;
-    os << "   hash: " << block.header.generic_header.block_hash.str(0, std::ios_base::hex) << std::endl;
-    os << "   previous_block_hash: " << block.header.generic_header.previous_block_hash.str(0, std::ios_base::hex)
+    os << "   hash: " << block.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase) << std::endl;
+    os << "   previous_block_hash: " << block.header.generic_header.previous_block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase)
        << std::endl;
     os << "   type: " << (uint32_t)block.header.generic_header.block_type << std::endl;
     //os << "   data value: " << block.data_value << std::endl;

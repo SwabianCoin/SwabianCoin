@@ -122,12 +122,12 @@ uint64_t MinerLocal::numChecksPerSecond() const {
 void MinerLocal::miningThread(uint32_t thread_id)
 {
     std::string random_prefix = std::to_string(std::rand() % 1000000000);
-    std::string prefix = previous_epoch_highest_hash_.str(0, std::ios_base::hex) + "_" +
+    std::string prefix = previous_epoch_highest_hash_.str(0, std::ios_base::hex | std::ios_base::uppercase) + "_" +
             owner_public_key_.getAsShortString() + "_" + random_prefix + "_";
 
     boost::multiprecision::uint1024_t value = 0;
     while(running_) {
-        std::string string_to_hash = prefix + value.str(0, std::ios_base::hex);
+        std::string string_to_hash = prefix + value.str(0, std::ios_base::hex | std::ios_base::uppercase);
         auto hash = CryptoHelper::calcHash(string_to_hash);
         stats_check_counter_++;
         if (hash >= min_allowed_value_ && hash <= max_allowed_value_) {
