@@ -160,7 +160,7 @@ block_uid_t Blockchain::establishBaseline() {
         LOG(INFO) << "  filled hash";
         google::FlushLogFiles(google::GLOG_INFO);
         this_block_id = cache_.addBlock(current_baseline_);
-        LOG(INFO) << "New Baseline " << current_baseline_.header.block_uid << ": " << current_baseline_.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase);
+        LOG(INFO) << "New Baseline " << current_baseline_.header.block_uid << ": " << hash_helper::toString(current_baseline_.header.generic_header.block_hash);
         google::FlushLogFiles(google::GLOG_INFO);
         current_baseline_.header.generic_header.block_hash = 0;
 
@@ -300,7 +300,7 @@ bool Blockchain::validateBlockWithoutContext(const BaselineBlock& block) {
     for(auto& epoch_hashes : block.data_value_hashes) {
         for(auto it = epoch_hashes.begin() ; it != epoch_hashes.end() ; it++) {
             if((it+1) != epoch_hashes.end() && *it == *(it+1)) {
-                LOG(ERROR) << "validateBlock: duplicate data_value hash found: " << it->str(0, std::ios_base::hex | std::ios_base::uppercase);
+                LOG(ERROR) << "validateBlock: duplicate data_value hash found: " << hash_helper::toString(*it);
                 return false;
             }
         }
@@ -617,10 +617,10 @@ bool Blockchain::validateSubBlock(const CreationSubBlock& sub_block,
 
     //check data value content (begins with public key and previous hash)
     if( !boost::starts_with(sub_block.data_value,
-                            mining_state.highest_hash_of_last_epoch.str(0, std::ios_base::hex | std::ios_base::uppercase) + "_" +
-                                    sub_block.creator.getAsShortString() + "_")) {
+            hash_helper::toString(mining_state.highest_hash_of_last_epoch) + "_" +
+            sub_block.creator.getAsShortString() + "_")) {
         LOG(ERROR) << "validateSubBlock: data_value beginning invalid" /*<< std::endl
-                   << "expected: " << mining_state.highest_hash_of_last_epoch.str(0, std::ios_base::hex | std::ios_base::uppercase) + "_" + sub_block.creator + "_" << std::endl
+                   << "expected: " << mining_state.highest_hash_of_last_epoch) + "_" + sub_block.creator + "_" << std::endl
                    << "found:    " << sub_block.data_value*/;
         return false;
     }
@@ -628,7 +628,7 @@ bool Blockchain::validateSubBlock(const CreationSubBlock& sub_block,
     //check data value hash area
     hash_t data_value_hash = CryptoHelper::calcHash(sub_block.data_value);
     if(data_value_hash < min_allowed_hash || data_value_hash > max_allowed_hash) {
-        LOG(ERROR) << "validateSubBlock: Data value hash area mismatch!" << std::endl << data_value_hash.str(0, std::ios_base::hex | std::ios_base::uppercase) << std::endl << sub_block.data_value << std::endl << "min/max:" << min_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase) << "/" << max_allowed_hash.str(0, std::ios_base::hex | std::ios_base::uppercase);
+        LOG(ERROR) << "validateSubBlock: Data value hash area mismatch!" << std::endl << hash_helper::toString(data_value_hash) << std::endl << sub_block.data_value << std::endl << "min/max:" << hash_helper::toString(min_allowed_hash) << "/" << hash_helper::toString(max_allowed_hash);
         return false;
     }
 
@@ -640,7 +640,7 @@ bool Blockchain::validateSubBlock(const CreationSubBlock& sub_block,
 
     //check if data_value is already in blockchain
     if(std::binary_search(data_value_hashes_of_epoch.begin(), data_value_hashes_of_epoch.end(), data_value_hash)) {
-        LOG(ERROR) << "validateSubBlock: data_value already found in blockchain: " << data_value_hash.str(0, std::ios_base::hex | std::ios_base::uppercase);
+        LOG(ERROR) << "validateSubBlock: data_value already found in blockchain: " << hash_helper::toString(data_value_hash);
         return false;
     }
 
@@ -664,15 +664,10 @@ void Blockchain::getHashArea(const epoch_t& epoch, hash_t& max_allowed_hash, has
 }
 
 
-void Blockchain::writeDataValueHashesToFile(const std::string& filename) {
+void Blockchain::writeCurrentBaselineToFile(const std::string& filename) {
     LOCK_MUTEX_WATCHDOG(mtx_current_baseline_access_);
     std::ofstream ofs(filename);
-    for(epoch_t epoch=0;epoch<current_baseline_.data_value_hashes.size();epoch++) {
-        ofs << "Epoch: " << epoch << ": " << current_baseline_.data_value_hashes[epoch].size() << std::endl;
-    }
-    for(auto& hash : current_baseline_.data_value_hashes.back()) {
-        ofs << "  " << hash.str(0, std::ios_base::hex | std::ios_base::uppercase) << std::endl;
-    }
+    ofs << current_baseline_;
 }
 
 

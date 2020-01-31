@@ -70,7 +70,7 @@ TEST(TestSerialization, CollectionBlockHashSimple) {
     block.header.block_uid = 17;
     block.header.generic_header.previous_block_hash = 123;
     CryptoHelper::fillHash(block);
-    EXPECT_EQ(block.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "92AB50CAA4A584A6A2953A0DC1E5FBFCD0C2981DE1478241F309BE67A275616D");
+    EXPECT_EQ(hash_helper::toString(block.header.generic_header.block_hash), "92AB50CAA4A584A6A2953A0DC1E5FBFCD0C2981DE1478241F309BE67A275616D");
 }
 
 TEST(TestSerialization, CollectionBlockHashExt) {
@@ -93,21 +93,21 @@ TEST(TestSerialization, CollectionBlockHashExt) {
     creation_block.creator = PublicKeyPEM("-----BEGIN PUBLIC KEY-----\nCREATOR\n-----END PUBLIC KEY-----");
     block.creations[creation_block.header.generic_header.block_hash] = creation_block;
     CryptoHelper::fillHash(block);
-    EXPECT_EQ(block.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "4EC67F2C53743DBF3A8AB740BBDDBC03747D30DDFF390CBC7AA6E891E6D418FC");
+    EXPECT_EQ(hash_helper::toString(block.header.generic_header.block_hash), "4EC67F2C53743DBF3A8AB740BBDDBC03747D30DDFF390CBC7AA6E891E6D418FC");
 
     block.header.generic_header.block_hash = 0;
     CryptoHelper::fillHash(block);
-    EXPECT_EQ(block.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "4EC67F2C53743DBF3A8AB740BBDDBC03747D30DDFF390CBC7AA6E891E6D418FC");
+    EXPECT_EQ(hash_helper::toString(block.header.generic_header.block_hash), "4EC67F2C53743DBF3A8AB740BBDDBC03747D30DDFF390CBC7AA6E891E6D418FC");
 
     block.header.block_uid = 18;
     block.header.generic_header.block_hash = 0;
     CryptoHelper::fillHash(block);
-    EXPECT_EQ(block.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "B504DEEA975CC25FF94693EF83670E7B86E45BB112E3621490AF53413FD312C1");
+    EXPECT_EQ(hash_helper::toString(block.header.generic_header.block_hash), "B504DEEA975CC25FF94693EF83670E7B86E45BB112E3621490AF53413FD312C1");
 
     block.transactions.begin()->second.fraction++;
     block.header.generic_header.block_hash = 0;
     CryptoHelper::fillHash(block);
-    EXPECT_EQ(block.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "39C25ECDD3579899F2B713FB1C95D674DCCE46797E98E7A60D7E2E5A2DA14B4E");
+    EXPECT_EQ(hash_helper::toString(block.header.generic_header.block_hash), "39C25ECDD3579899F2B713FB1C95D674DCCE46797E98E7A60D7E2E5A2DA14B4E");
 }
 
 std::vector<scn::public_key_t> example_pub_keys = {PublicKeyPEM("-----BEGIN PUBLIC KEY-----\n"
@@ -165,7 +165,7 @@ TEST(TestSerialization, BaselineBlockHashHuge) {
     t3 = std::chrono::system_clock::now();
     std::cout << "Generate Data: " << (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1)).count() << "ms" << std::endl
               << "Fill Hash: " << (std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2)).count() << "ms" << std::endl;
-    EXPECT_EQ(block.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "BCE609969E259DBA1318A1E6263F4F2872FEB9E11F2C2D37F3E20E4C501C7BB2");
+    EXPECT_EQ(hash_helper::toString(block.header.generic_header.block_hash), "BCE609969E259DBA1318A1E6263F4F2872FEB9E11F2C2D37F3E20E4C501C7BB2");
 }
 
 int main(int argc, char **argv) {

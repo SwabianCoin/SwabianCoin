@@ -1,11 +1,10 @@
 FROM ubuntu:18.04
 
-RUN apt-get update --fix-missing
-RUN apt-get install -y --allow-unauthenticated wget libboost-all-dev libssl-dev libgoogle-glog-dev libcurl4-openssl-dev
-
 WORKDIR /tmp
-
-RUN wget https://swabiancoin.com/mine_schwabencoin.sh -O /tmp/mine_schwabencoin.sh
+RUN apt-get update && apt-get install -y wget
+# get installation package
+RUN wget https://github.com/SwabianCoin/SwabianCoin/releases/download/v20.01.02/swabiancoin_20.01.2-1_amd64.deb
+RUN apt-get update && apt-get install -y ./swabiancoin_20.01.2-1_amd64.deb
 
 # how to create public/private key pair
 #RUN openssl ecparam -name secp256k1 -genkey -noout -out private-key.pem
@@ -16,5 +15,4 @@ COPY public-key.pem /tmp/public-key.pem
 COPY private-key.pem /tmp/private-key.pem
 
 EXPOSE 13286
-
-CMD [ "/bin/bash", "/tmp/mine_schwabencoin.sh" ]
+CMD [ "full_node_cli", "public-key.pem", "private-key.pem", "1", "13286" ]

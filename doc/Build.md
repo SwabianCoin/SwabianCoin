@@ -14,7 +14,7 @@
  - **\[Ubuntu 18.04\]** Install apt packages
 ```
 sudo apt-get update
-sudo apt-get install libboost-all-dev libssl-dev libcurl4-openssl-dev
+sudo apt-get install libboost-all-dev libssl-dev libcurl4-openssl-dev libgflags2.2
 ```
 
  - **\[Ubuntu 18.04\]** Install up-to-date cmake 

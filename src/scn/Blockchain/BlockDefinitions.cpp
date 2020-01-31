@@ -21,8 +21,8 @@ using namespace scn;
 
 std::ostream& scn::operator<<(std::ostream& os, const BaseBlock& block) {
     os << "Block " << block.header.block_uid << std::endl;
-    os << "   hash: " << block.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase) << std::endl;
-    os << "   previous_block_hash: " << block.header.generic_header.previous_block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase)
+    os << "   hash: " << hash_helper::toString(block.header.generic_header.block_hash) << std::endl;
+    os << "   previous_block_hash: " << hash_helper::toString(block.header.generic_header.previous_block_hash)
        << std::endl;
     os << "   type: " << (uint32_t)block.header.generic_header.block_type << std::endl;
     return os;
@@ -31,7 +31,7 @@ std::ostream& scn::operator<<(std::ostream& os, const BaseBlock& block) {
 
 std::ostream& scn::operator<<(std::ostream& os, const BaselineBlock& block) {
     os << (BaseBlock&)block;
-    os << "   wallets" << std::endl;
+    os << "   wallets: " << block.wallets.size() << std::endl;
     for(auto& wallet : block.wallets) {
         os << "      " << wallet.first.getAsShortString() << ": " << wallet.second << std::endl;
     }
@@ -39,7 +39,7 @@ std::ostream& scn::operator<<(std::ostream& os, const BaselineBlock& block) {
     for(uint32_t epoch = 0;epoch < block.data_value_hashes.size();epoch++) {
         os << "    epoch " << epoch << ": " << block.data_value_hashes[epoch].size() << std::endl;
         for(auto& data_value_hash : block.data_value_hashes[epoch]) {
-            os << "     " << data_value_hash.str(0, std::ios_base::hex | std::ios_base::uppercase) << std::endl;
+            os << "     " << hash_helper::toString(data_value_hash) << std::endl;
         }
 
     }
@@ -64,13 +64,13 @@ std::ostream& scn::operator<<(std::ostream& os, const CollectionBlock& block) {
 
 std::ostream& scn::operator<<(std::ostream& os, const TransactionSubBlock& block) {
     os << "TransactionSubBlock " << std::endl;
-    os << "   hash: " << block.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase) << std::endl;
-    os << "   previous_block_hash: " << block.header.generic_header.previous_block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase)
+    os << "   hash: " << hash_helper::toString(block.header.generic_header.block_hash) << std::endl;
+    os << "   previous_block_hash: " << hash_helper::toString(block.header.generic_header.previous_block_hash)
        << std::endl;
     os << "   type: " << (uint32_t)block.header.generic_header.block_type << std::endl;
     os << "   fraction: " << block.fraction << std::endl;
-    //os << "   preowner: " << block.pre_owner << std::endl;
-    //os << "   postowner: " << block.post_owner << std::endl;
+    os << "   preowner: " << block.pre_owner.getAsShortString() << std::endl;
+    os << "   postowner: " << block.post_owner.getAsShortString() << std::endl;
     //os << "   signature: " << block.signature << std::endl;
     return os;
 }
@@ -78,12 +78,12 @@ std::ostream& scn::operator<<(std::ostream& os, const TransactionSubBlock& block
 
 std::ostream& scn::operator<<(std::ostream& os, const CreationSubBlock& block) {
     os << "CreationSubBlock " << std::endl;
-    os << "   hash: " << block.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase) << std::endl;
-    os << "   previous_block_hash: " << block.header.generic_header.previous_block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase)
+    os << "   hash: " << hash_helper::toString(block.header.generic_header.block_hash) << std::endl;
+    os << "   previous_block_hash: " << hash_helper::toString(block.header.generic_header.previous_block_hash)
        << std::endl;
     os << "   type: " << (uint32_t)block.header.generic_header.block_type << std::endl;
-    //os << "   data value: " << block.data_value << std::endl;
-    //os << "   creator: " << block.creator << std::endl;
+    os << "   data value: " << block.data_value << std::endl;
+    os << "   creator: " << block.creator.getAsShortString() << std::endl;
     //os << "   signature: " << block.signature << std::endl;
     return os;
 }

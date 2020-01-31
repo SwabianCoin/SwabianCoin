@@ -147,6 +147,11 @@ struct FcoinPeerPlugin final
         return peer_connection_.pid().to_string();
     }
 
+    virtual bool isConnected() const {
+        auto id = getId();
+        return id.length() > 0 && id[0] != 0; //todo: find better way to determine connection state
+    }
+
 protected:
 
     virtual void sendMessageWithinSingleThread(std::shared_ptr<std::string> message) {

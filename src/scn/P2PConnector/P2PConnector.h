@@ -21,6 +21,7 @@
 #include "scn/Blockchain/Blockchain.h"
 #include <functional>
 #include <vector>
+#include <list>
 #include <string>
 #include <thread>
 
@@ -78,6 +79,8 @@ namespace scn {
         static const uint16_t protocol_version_;
 
         virtual void alertThread();
+
+        std::list<libtorrent::IPeer*> getConnectedPeers() const;
 
         std::shared_ptr<libtorrent::session> session_;
         libtorrent::torrent_handle torrent_handle_;

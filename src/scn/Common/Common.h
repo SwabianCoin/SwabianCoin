@@ -45,6 +45,16 @@ namespace scn {
                                      t_stop = std::chrono::system_clock::now(); \
                                      auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(t_stop - t_start).count(); \
                                      if(millis >= 150) LOG(WARNING) << "Mutex watchdog: locking takes long time - " << millis << " ms";
+
+    namespace hash_helper {
+
+        std::string toString(const hash_t& hash);
+
+        void toArray(const hash_t& hash, uint8_t* array);
+
+        hash_t fromArray(const uint8_t* array);
+
+    }
 }
 
 

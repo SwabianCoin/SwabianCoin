@@ -50,6 +50,10 @@ namespace scn {
         virtual std::string getId() const {
 
         }
+
+        virtual bool isConnected() const {
+
+        }
     };
 
 }

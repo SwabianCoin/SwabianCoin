@@ -70,7 +70,7 @@ void CycleStateFetchBlockchain::blockReceivedCallback(IPeer& peer, const Baselin
             if(Blockchain::validateBlockWithoutContext(block)) {
                 base_.blockchain_.setRootBlock(block);
                 LOG(INFO) << "Fetched block " << block.header.block_uid << ": "
-                          << block.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase);
+                          << hash_helper::toString(block.header.generic_header.block_hash);
                 {
                     LOCK_MUTEX_WATCHDOG(mtx_next_block_to_ask_for_);
                     next_block_to_ask_for_ = block.header.block_uid + 1;
@@ -83,7 +83,7 @@ void CycleStateFetchBlockchain::blockReceivedCallback(IPeer& peer, const Baselin
         else {
             LOG(INFO) << "Ignoring received baseline block: "
                       << block.header.block_uid << ": "
-                      << block.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase);
+                      << hash_helper::toString(block.header.generic_header.block_hash);
         }
     } else {
         synchronized_ = (block.header.block_uid == base_.blockchain_.getNewestBlockId()+1);
@@ -97,7 +97,7 @@ void CycleStateFetchBlockchain::blockReceivedCallback(IPeer& peer, const Collect
             if (base_.blockchain_.validateBlock(block)) {
                 base_.blockchain_.addBlock(block);
                 LOG(INFO) << "Fetched block " << block.header.block_uid << ": "
-                          << block.header.generic_header.block_hash.str(0, std::ios_base::hex | std::ios_base::uppercase);
+                          << hash_helper::toString(block.header.generic_header.block_hash);
                 {
                     LOCK_MUTEX_WATCHDOG(mtx_next_block_to_ask_for_);
                     next_block_to_ask_for_ = block.header.block_uid + 1;
@@ -172,7 +172,7 @@ void CycleStateFetchBlockchain::fetchBlocksThread() {
             }
         }
 
-        uint32_t wait_time_s = 10;
+        uint32_t wait_time_s = 5;
         if(current_block_to_ask_for == 0 || BlockchainManager::isBaselineBlock(current_block_to_ask_for)) {
             wait_time_s = 60;
         }

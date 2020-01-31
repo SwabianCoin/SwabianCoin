@@ -147,10 +147,11 @@ void P2PConnector::askForBlock(block_uid_t uid) {
     oa << protocol_version_;
     oa << (uint8_t)type;
     oa << uid;
+    auto connected_peers = getConnectedPeers();
     LOCK_MUTEX_WATCHDOG(mtx_access_peers_);
-    if(peers_.size() > 0) {
-        auto it = peers_.begin();
-        std::advance(it, std::rand() % peers_.size());
+    if(connected_peers.size() > 0) {
+        auto it = connected_peers.begin();
+        std::advance(it, std::rand() % connected_peers.size());
         if((*it) != peer_sending_baseline_to_) {
             (*it)->sendMessage(std::make_shared<std::string>(std::move(oss.str())));
         }
@@ -164,10 +165,11 @@ void P2PConnector::askForLastBaselineBlock() {
     const MessageType type = MessageType::AskForLastBaselineBlock;
     oa << protocol_version_;
     oa << (uint8_t)type;
+    auto connected_peers = getConnectedPeers();
     LOCK_MUTEX_WATCHDOG(mtx_access_peers_);
-    if(peers_.size() > 0) {
-        auto it = peers_.begin();
-        std::advance(it, std::rand() % peers_.size());
+    if(connected_peers.size() > 0) {
+        auto it = connected_peers.begin();
+        std::advance(it, std::rand() % connected_peers.size());
         if((*it) != peer_sending_baseline_to_) {
             (*it)->sendMessage(std::make_shared<std::string>(std::move(oss.str())));
         }
@@ -270,6 +272,17 @@ void P2PConnector::alertThread() {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
+}
+
+
+std::list<libtorrent::IPeer*> P2PConnector::getConnectedPeers() const {
+    std::list<libtorrent::IPeer*> connected_peers;
+    for(auto& peer : peers_) {
+        if(peer->isConnected()) {
+            connected_peers.push_back(peer);
+        }
+    }
+    return connected_peers;
 }
 
 

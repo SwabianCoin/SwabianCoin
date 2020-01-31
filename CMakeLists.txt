@@ -27,6 +27,7 @@ include_directories(src/
         ${CURL_INCLUDE_DIRS})
 
 add_library(full_node_library
+        src/scn/Common/Common.cpp
         src/scn/Common/BloomFilter.cpp
         src/scn/Common/PublicKeyPEM.cpp
         src/scn/Miner/MinerLocal.cpp

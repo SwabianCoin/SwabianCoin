@@ -23,6 +23,8 @@ namespace libtorrent {
         virtual void ban() = 0;
 
         virtual std::string getId() const = 0;
+
+        virtual bool isConnected() const = 0;
     };
 
 }

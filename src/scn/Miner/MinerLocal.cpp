@@ -67,14 +67,6 @@ void MinerLocal::start(const hash_t& previous_epoch_highest_hash,
     for(uint32_t i=0;i<num_worker_threads_;i++)
     {
         workers_.emplace_back(&MinerLocal::miningThread, this, i);
-
-#ifdef _WIN32
-        SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
-#else
-        struct sched_param p;
-        p.sched_priority=0;
-        pthread_setschedparam(workers_.back().native_handle(),SCHED_IDLE,&p);
-#endif
     }
 
     //start stats thread
@@ -121,8 +113,16 @@ uint64_t MinerLocal::numChecksPerSecond() const {
 
 void MinerLocal::miningThread(uint32_t thread_id)
 {
+#ifdef _WIN32
+    SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
+#else
+    struct sched_param p;
+    p.sched_priority = 0;
+    pthread_setschedparam(pthread_self(), SCHED_IDLE, &p);
+#endif
+
     std::string random_prefix = std::to_string(std::rand() % 1000000000);
-    std::string prefix = previous_epoch_highest_hash_.str(0, std::ios_base::hex | std::ios_base::uppercase) + "_" +
+    std::string prefix = hash_helper::toString(previous_epoch_highest_hash_) + "_" +
             owner_public_key_.getAsShortString() + "_" + random_prefix + "_";
 
     boost::multiprecision::uint1024_t value = 0;

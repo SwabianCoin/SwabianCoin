@@ -72,7 +72,7 @@ namespace scn {
 
         static void getHashArea(const epoch_t& epoch, hash_t& max_allowed_hash, hash_t& min_allowed_hash);
 
-        void writeDataValueHashesToFile(const std::string& filename);
+        void writeCurrentBaselineToFile(const std::string& filename);
 
     protected:
 

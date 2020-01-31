@@ -21,14 +21,14 @@ using namespace scn;
 
 TEST(TestCrypto, HashCalculationShort) {
     auto hash = CryptoHelper::calcHash("A random text.");
-    EXPECT_EQ(hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "1FF38799705BD4B5CEAA66EE3DEC54A304E16B64A1711838730EFF6752F2BA6");
+    EXPECT_EQ(hash_helper::toString(hash), "1FF38799705BD4B5CEAA66EE3DEC54A304E16B64A1711838730EFF6752F2BA6");
 }
 
 TEST(TestCrypto, HashCalculationShortStream) {
     std::stringstream ss;
     ss << "A random text.";
     auto hash = CryptoHelper::calcHash(ss);
-    EXPECT_EQ(hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "1FF38799705BD4B5CEAA66EE3DEC54A304E16B64A1711838730EFF6752F2BA6");
+    EXPECT_EQ(hash_helper::toString(hash), "1FF38799705BD4B5CEAA66EE3DEC54A304E16B64A1711838730EFF6752F2BA6");
 }
 
 void buildLongStringStream(std::stringstream& ss) {
@@ -42,12 +42,12 @@ TEST(TestCrypto, HashCalculationLong) {
     std::stringstream ss;
     buildLongStringStream(ss);
     auto hash = CryptoHelper::calcHash(ss.str());
-    EXPECT_EQ(hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "D428F80D2822CFF295B9746FA9D4D10B497EB3EC0D2B63A562425D69EAB9C5A7");
+    EXPECT_EQ(hash_helper::toString(hash), "D428F80D2822CFF295B9746FA9D4D10B497EB3EC0D2B63A562425D69EAB9C5A7");
 }
 
 TEST(TestCrypto, HashCalculationLongStream) {
     std::stringstream ss;
     buildLongStringStream(ss);
     auto hash = CryptoHelper::calcHash(ss);
-    EXPECT_EQ(hash.str(0, std::ios_base::hex | std::ios_base::uppercase), "D428F80D2822CFF295B9746FA9D4D10B497EB3EC0D2B63A562425D69EAB9C5A7");
+    EXPECT_EQ(hash_helper::toString(hash), "D428F80D2822CFF295B9746FA9D4D10B497EB3EC0D2B63A562425D69EAB9C5A7");
 }

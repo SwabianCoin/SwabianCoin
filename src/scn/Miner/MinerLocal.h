@@ -66,8 +66,8 @@ namespace scn {
         public_key_t owner_public_key_;
         epoch_t epoch_;
         std::function<void(epoch_t,std::string&)> found_value_callback_;
-        boost::multiprecision::uint256_t min_allowed_value_;
-        boost::multiprecision::uint256_t max_allowed_value_;
+        hash_t min_allowed_value_;
+        hash_t max_allowed_value_;
     };
 
 }
