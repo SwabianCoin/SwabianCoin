@@ -28,13 +28,18 @@ using namespace scn;
 class TestBlockchainManager : public testing::Test {
 public:
 
-    TestBlockchainManager()
-    :peer_stub_()
-    ,sync_timer_stub_()
+    TestBlockchainManager(bool synchronized = false)
+    :peer_stubs_()
+    ,sync_timer_stub_(7*120000 + 1) //begin at cycle start
     ,blockchain_("./blockchain_unit_test/")
     ,p2p_connector_stub_()
-    ,miner_(1)
-    ,blockchain_manager_(example_owner_public_key, example_owner_private_key, blockchain_, p2p_connector_stub_, miner_, true, sync_timer_stub_) {
+    ,miner_(0)
+    ,crypto_(example_owner_public_key, example_owner_private_key)
+    ,blockchain_manager_(example_owner_public_key, example_owner_private_key, blockchain_, p2p_connector_stub_, miner_, !synchronized, sync_timer_stub_) {
+        for(uint32_t i=0;i<peer_stubs_.size();i++) {
+            peer_stubs_[i].id_ = std::to_string(i);
+            peer_stubs_[i].info_ = "10.0.0.1" + std::to_string(i);
+        }
         blockchain_.initEmptyChain();
     }
 
@@ -51,12 +56,77 @@ protected:
                                               "XyfEoqZ5Clz+ZlOSYL1beQTpJ4BDwg==\n"
                                               "-----END EC PRIVATE KEY-----";
 
-    PeerStub peer_stub_;
+    std::vector<std::string> valid_data_values_epoch_0 = {
+            "0_MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEvdfi1bMgqn03FuVcjwtLMJyfnxinHrvYJzyHUNUzT6IngeP4ijXcHHqTXyfEoqZ5Clz+ZlOSYL1beQTpJ4BDwg==_248833349_7B",
+            "0_MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEvdfi1bMgqn03FuVcjwtLMJyfnxinHrvYJzyHUNUzT6IngeP4ijXcHHqTXyfEoqZ5Clz+ZlOSYL1beQTpJ4BDwg==_248833349_618",
+            "0_MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEvdfi1bMgqn03FuVcjwtLMJyfnxinHrvYJzyHUNUzT6IngeP4ijXcHHqTXyfEoqZ5Clz+ZlOSYL1beQTpJ4BDwg==_248833349_6D7",
+            "0_MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEvdfi1bMgqn03FuVcjwtLMJyfnxinHrvYJzyHUNUzT6IngeP4ijXcHHqTXyfEoqZ5Clz+ZlOSYL1beQTpJ4BDwg==_248833349_947",
+            "0_MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEvdfi1bMgqn03FuVcjwtLMJyfnxinHrvYJzyHUNUzT6IngeP4ijXcHHqTXyfEoqZ5Clz+ZlOSYL1beQTpJ4BDwg==_248833349_95A",
+            "0_MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEvdfi1bMgqn03FuVcjwtLMJyfnxinHrvYJzyHUNUzT6IngeP4ijXcHHqTXyfEoqZ5Clz+ZlOSYL1beQTpJ4BDwg==_248833349_A52"
+    };
+
+    std::array<PeerStub, 10> peer_stubs_;
     SynchronizedTimerStub sync_timer_stub_;
     Blockchain blockchain_;
     P2PConnectorStub p2p_connector_stub_;
     MinerLocal miner_;
+    CryptoHelper crypto_;
     BlockchainManager blockchain_manager_;
+
+
+    void CheckBlockAcceptance(uint32_t check_time_in_cycle, bool accept, uint32_t sending_peers) {
+        ASSERT_LE(sending_peers, 10);
+        //wait one complete cycle (settling)
+        sync_timer_stub_.letTheTimeGoOn(60000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        sync_timer_stub_.letTheTimeGoOn(60000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+        //proceed to the first half of introduce block phase
+        sync_timer_stub_.letTheTimeGoOn(30000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        sync_timer_stub_.letTheTimeGoOn(check_time_in_cycle);
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+        //send a valid block containing a creation to blockchain manager
+        auto previous_block = blockchain_.getNewestBlock();
+        CollectionBlock collection_block;
+        collection_block.header.block_uid = previous_block->header.block_uid + 1;
+        collection_block.header.generic_header.previous_block_hash = previous_block->header.generic_header.block_hash;
+        CreationSubBlock creation_sub_block;
+        creation_sub_block.header.generic_header.previous_block_hash = previous_block->header.generic_header.block_hash;
+        creation_sub_block.creator = example_owner_public_key;
+        creation_sub_block.data_value = valid_data_values_epoch_0[0];
+        crypto_.fillSignature(creation_sub_block);
+        CryptoHelper::fillHash(creation_sub_block);
+        collection_block.creations[creation_sub_block.header.generic_header.block_hash] = creation_sub_block;
+        CryptoHelper::fillHash(collection_block);
+        for(uint32_t i=0;i<sending_peers;i++) {
+            p2p_connector_stub_.callback_collection_(peer_stubs_[i], collection_block, false);
+        }
+
+        //wait some time to let blockchain manager merge the creation
+        sync_timer_stub_.letTheTimeGoOn(6000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+        //check if blockchain manager merged the creation
+        if(accept) {
+            EXPECT_GE(p2p_connector_stub_.propagate_collection_block_counter_, 1);
+            ASSERT_EQ(p2p_connector_stub_.last_collection_block_.creations.size(), 1);
+            EXPECT_EQ(p2p_connector_stub_.last_collection_block_.creations.begin()->first,
+                      creation_sub_block.header.generic_header.block_hash);
+        } else {
+            //check if blockchain manager merged the creation
+            EXPECT_GE(p2p_connector_stub_.propagate_collection_block_counter_, 1);
+            ASSERT_EQ(p2p_connector_stub_.last_collection_block_.creations.size(), 0);
+        }
+    }
+};
+
+class TestBlockchainManagerSynchronized : public TestBlockchainManager {
+public:
+    TestBlockchainManagerSynchronized()
+    :TestBlockchainManager(true) {}
 };
 
 
@@ -92,7 +162,11 @@ TEST_F(TestBlockchainManager, getNextBaselineBlockMethod) {
 
 TEST_F(TestBlockchainManager, InitialUnsynchronized) {
     EXPECT_EQ(blockchain_manager_.percentBlockchainSynchronized(), 0);
+
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    EXPECT_EQ(blockchain_manager_.percentBlockchainSynchronized(), 0);
+    EXPECT_EQ(blockchain_manager_.getCurrentState(), ICycleState::State::FetchBlockchain);
 }
 
 TEST_F(TestBlockchainManager, Synchronization) {
@@ -118,7 +192,7 @@ TEST_F(TestBlockchainManager, Synchronization) {
     EXPECT_GE(p2p_connector_stub_.ask_for_last_baseline_block_counter_, 1);
 
     //send baseline block to manager
-    p2p_connector_stub_.callback_baseline_(peer_stub_, root_block, true);
+    p2p_connector_stub_.callback_baseline_(peer_stubs_[0], root_block, true);
 
     for(uint32_t i=0;i<collection_blocks.size();i++) {
         //let some time go by
@@ -130,6 +204,104 @@ TEST_F(TestBlockchainManager, Synchronization) {
         EXPECT_EQ(p2p_connector_stub_.ask_for_block_uid_, i+2);
 
         //send follow up block
-        p2p_connector_stub_.callback_collection_(peer_stub_, collection_blocks[i], true);
+        p2p_connector_stub_.callback_collection_(peer_stubs_[0], collection_blocks[i], true);
     }
+}
+
+TEST_F(TestBlockchainManagerSynchronized, CycleStateChanges) {
+    //wait one complete cycle (settling)
+    sync_timer_stub_.letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    sync_timer_stub_.letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    EXPECT_EQ(blockchain_manager_.getCurrentState(), ICycleState::State::Collect);
+
+    sync_timer_stub_.letTheTimeGoOn(30000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    EXPECT_EQ(blockchain_manager_.getCurrentState(), ICycleState::State::IntroduceBlock);
+
+    sync_timer_stub_.letTheTimeGoOn(30000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    EXPECT_EQ(blockchain_manager_.getCurrentState(), ICycleState::State::IntroduceBlock);
+
+    sync_timer_stub_.letTheTimeGoOn(30000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    EXPECT_EQ(blockchain_manager_.getCurrentState(), ICycleState::State::IntroduceBlock);
+
+    sync_timer_stub_.letTheTimeGoOn(30000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    EXPECT_EQ(blockchain_manager_.getCurrentState(), ICycleState::State::Collect);
+}
+
+TEST_F(TestBlockchainManagerSynchronized, MergeBlocks) {
+    //wait one complete cycle (settling)
+    sync_timer_stub_.letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    sync_timer_stub_.letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    p2p_connector_stub_.propagate_collection_block_counter_ = 0;
+
+    //proceed from collect phase to introduce block phase
+    sync_timer_stub_.letTheTimeGoOn(30000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    //check if initial block has been sent by blockchain manager
+    EXPECT_EQ(p2p_connector_stub_.propagate_collection_block_counter_, 1);
+    EXPECT_EQ(p2p_connector_stub_.last_collection_block_.creations.size(), 0);
+
+    //send a valid block containing a creation to blockchain manager
+    auto previous_block = blockchain_.getNewestBlock();
+    CollectionBlock collection_block;
+    collection_block.header.block_uid = previous_block->header.block_uid + 1;
+    collection_block.header.generic_header.previous_block_hash = previous_block->header.generic_header.block_hash;
+    CreationSubBlock creation_sub_block;
+    creation_sub_block.header.generic_header.previous_block_hash = previous_block->header.generic_header.block_hash;
+    creation_sub_block.creator = example_owner_public_key;
+    creation_sub_block.data_value = valid_data_values_epoch_0[0];
+    crypto_.fillSignature(creation_sub_block);
+    CryptoHelper::fillHash(creation_sub_block);
+    collection_block.creations[creation_sub_block.header.generic_header.block_hash] = creation_sub_block;
+    CryptoHelper::fillHash(collection_block);
+    p2p_connector_stub_.callback_collection_(peer_stubs_[0], collection_block, false);
+
+    //wait some time to let blockchain manager merge the creation
+    sync_timer_stub_.letTheTimeGoOn(6000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    //check if blockchain manager merged the creation
+    EXPECT_EQ(p2p_connector_stub_.propagate_collection_block_counter_, 2);
+    ASSERT_EQ(p2p_connector_stub_.last_collection_block_.creations.size(), 1);
+    EXPECT_EQ(p2p_connector_stub_.last_collection_block_.creations.begin()->first,creation_sub_block.header.generic_header.block_hash);
+}
+
+
+
+TEST_F(TestBlockchainManagerSynchronized, AcceptEarlyBlock) {
+    CheckBlockAcceptance(0, true, 1);
+}
+
+TEST_F(TestBlockchainManagerSynchronized, AcceptInTimeBlock) {
+    CheckBlockAcceptance(35000, true, 1);
+}
+
+TEST_F(TestBlockchainManagerSynchronized, RefuseOutOfTimeBlock1) {
+    CheckBlockAcceptance(60000, false, 1);
+}
+
+TEST_F(TestBlockchainManagerSynchronized, RefuseOutOfTimeBlock2) {
+    CheckBlockAcceptance(75000, false, 1);
+}
+
+TEST_F(TestBlockchainManagerSynchronized, AcceptLateBlockMultiplePeers1) {
+    CheckBlockAcceptance(60000, true, 5);
+}
+
+TEST_F(TestBlockchainManagerSynchronized, AcceptLateBlockMultiplePeers2) {
+    CheckBlockAcceptance(75000, true, 7);
 }

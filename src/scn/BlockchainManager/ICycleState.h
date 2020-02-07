@@ -24,6 +24,15 @@ namespace scn {
 
     class ICycleState {
     public:
+
+        enum class State : uint8_t {
+            Unassigned        = 0,
+            FetchBlockchain   = 1,
+            Collect           = 2,
+            IntroduceBlock    = 3,
+            IntroduceBaseline = 4
+        };
+
         ICycleState() {};
 
         virtual ~ICycleState() {};
@@ -37,6 +46,8 @@ namespace scn {
         virtual void blockReceivedCallback(IPeer& peer, const BaselineBlock &block, bool reply) {}
 
         virtual void blockReceivedCallback(IPeer& peer, const CollectionBlock &block, bool reply) {}
+
+        virtual State getState() const = 0;
     };
 
 }

@@ -11,6 +11,6 @@ make
 
 echo "Don't forget to specify the correct version in checkinstall!"
 sleep 3
-sudo checkinstall -D --pkgname=swabiancoin --pkgsource=swabiancoin --maintainer=swabiancoin@gmail.com --requires="libboost-all-dev \(\>= 1.65\),libssl1.1 \(\>= 1.1\),libcurl4 \(\>= 7.58\),libgflags2.2 \(\>= 2.2\)"
+sudo checkinstall -D --pkgname=swabiancoin --pkgsource=swabiancoin --maintainer=swabiancoin@gmail.com --requires="libboost-all-dev \(\>= 1.65\),libssl1.1 \(\>= 1.1\),libgflags2.2 \(\>= 2.2\)"
 
 cd ..

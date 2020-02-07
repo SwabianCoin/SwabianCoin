@@ -45,16 +45,18 @@ BlockchainManager::BlockchainManager(public_key_t our_public_key,
 , cycle_state_introduce_baseline_(*this)
 , current_state_(NULL)
 , running_(true)
-, update_state_thread_(&BlockchainManager::updateStateThread, this) {
+, update_state_thread_(nullptr) {
     p2p_connector_.registerBlockCallbacks(std::bind(&BlockchainManager::baselineBlockReceivedCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
                                           std::bind(&BlockchainManager::collectionBlockReceivedCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     p2p_connector_.connect();
+
+    update_state_thread_ = std::make_unique<std::thread>(&BlockchainManager::updateStateThread, this);
 }
 
 
 BlockchainManager::~BlockchainManager() {
     running_ = false;
-    update_state_thread_.join();
+    update_state_thread_->join();
 }
 
 
@@ -89,7 +91,7 @@ void BlockchainManager::triggerTransaction(const public_key_t& receiver, const u
 
 
 void BlockchainManager::join() {
-    update_state_thread_.join();
+    update_state_thread_->join();
 }
 
 
@@ -120,6 +122,16 @@ uint8_t BlockchainManager::percentBlockchainSynchronized() const {
 
 uint64_t BlockchainManager::getTotalPeersEstimation() const {
     return active_peers_collector_.getActivePeers();
+}
+
+
+ICycleState::State BlockchainManager::getCurrentState() const {
+    LOCK_MUTEX_WATCHDOG(mtx_current_state_access_);
+    if(current_state_ == NULL) {
+        return ICycleState::State::Unassigned;
+    } else {
+        return current_state_->getState();
+    }
 }
 
 
@@ -177,8 +189,6 @@ bool BlockchainManager::cycleUntil(blockchain_time_t target_time) {
 
 
 void BlockchainManager::updateStateThread() {
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(100)); //todo: race condition with constructor, solve more elegant than just a sleep
 
     if(initial_fetch_) {
         fetchBlockchain();

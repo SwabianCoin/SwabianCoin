@@ -42,6 +42,8 @@ namespace scn {
 
         virtual void blockReceivedCallback(IPeer& peer, const CollectionBlock &block, bool reply) override;
 
+        virtual State getState() const { return State::FetchBlockchain; }
+
         virtual bool isSynchronized() const;
 
         virtual uint8_t percentSynchronizationDone() const;

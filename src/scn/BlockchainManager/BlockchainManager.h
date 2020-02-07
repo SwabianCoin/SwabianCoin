@@ -65,6 +65,8 @@ namespace scn {
 
         virtual uint64_t getTotalPeersEstimation() const;
 
+        virtual ICycleState::State getCurrentState() const;
+
         static bool isBaselineBlock(block_uid_t block_uid);
 
         static block_uid_t getNextBaselineBlock(block_uid_t block_uid);
@@ -116,7 +118,7 @@ namespace scn {
         ICycleState* current_state_;
 
         bool running_;
-        std::thread update_state_thread_;
+        std::unique_ptr<std::thread> update_state_thread_;
 
         CollectionBlock new_block_;
 

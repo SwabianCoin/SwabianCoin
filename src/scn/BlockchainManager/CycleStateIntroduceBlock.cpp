@@ -20,6 +20,13 @@
 
 using namespace scn;
 
+// 4 second steps
+// at the beginning: 1 incoming peer is enough to accept a block
+// right before cycle end: almost all peers have to send the block in order for us to accept it
+const std::array<uint32_t, 22> CycleStateIntroduceBlock::peers_necessary_for_granting_ = {1,1,1,1,1,1,1,1,1,1,
+                                                                                          1,2,2,3,4,5,5,6,6,7,
+                                                                                          7,8};
+
 CycleStateIntroduceBlock::CycleStateIntroduceBlock(BlockchainManager& base)
 :base_(base) {
 
@@ -37,6 +44,8 @@ void CycleStateIntroduceBlock::onEnter() {
     base_.out_of_sync_detector_.restartCheckCycle(base_.blockchain_);
 
     processed_blocks_.clear();
+    creation_sub_block_counter.clear();
+    transaction_sub_block_counter.clear();
 
     block_uid_t new_block_uid = base_.blockchain_.getNewestBlockId() + 1;
     base_.new_block_.header.generic_header.previous_block_hash = base_.blockchain_.getBlock(new_block_uid-1)->header.generic_header.block_hash;
@@ -47,6 +56,7 @@ void CycleStateIntroduceBlock::onEnter() {
     LOG(INFO) << "Propagate initial block: " << hash_helper::toString(base_.new_block_.header.generic_header.block_hash);
     base_.p2p_connector_.propagateBlock(base_.new_block_);
     next_propagation_time_ = base_.sync_timer_.now() + time_between_propagations_ms_;
+    num_propagations_in_current_cycle_ = 1;
 }
 
 
@@ -55,6 +65,7 @@ bool CycleStateIntroduceBlock::onCycle() {
         next_propagation_time_ += time_between_propagations_ms_;
         LOG(INFO) << "Propagate updated block: " << hash_helper::toString(base_.new_block_.header.generic_header.block_hash);
         base_.p2p_connector_.propagateBlock(base_.new_block_);
+        num_propagations_in_current_cycle_++;
     }
     return false;
 }
@@ -89,15 +100,19 @@ void CycleStateIntroduceBlock::blockReceivedCallback(IPeer& peer, const Collecti
         return;
     }
     LOG(INFO) << "CycleStateIntroduceBlock incoming block: " << hash_helper::toString(block.header.generic_header.block_hash);
+    auto processed_block_it = processed_blocks_.find(block.header.generic_header.block_hash);
     if(block.header.block_uid != base_.new_block_.header.block_uid) {
         LOG(INFO) << "  Ignoring block (unexpected block id " << block.header.block_uid << ")";
-    } else if(processed_blocks_.find(block.header.generic_header.block_hash) != processed_blocks_.end()) {
+    } else if(processed_block_it != processed_blocks_.end() &&
+              creation_sub_block_counter.size() == 0 &&
+              transaction_sub_block_counter.size() == 0) {
         LOG(INFO) << "  Ignoring block (already processed)";
     } else {
-        processed_blocks_.insert(block.header.generic_header.block_hash);
         std::chrono::time_point<std::chrono::system_clock> t0, t1, t2, t3, t4, t5;
         t0 = std::chrono::system_clock::now();
-        if (base_.blockchain_.validateBlock(block)) {
+        bool block_valid = (processed_block_it != processed_blocks_.end()) ? processed_block_it->second : base_.blockchain_.validateBlock(block);
+        processed_blocks_[block.header.generic_header.block_hash] = block_valid;
+        if (block_valid) {
             t1 = std::chrono::system_clock::now();
             auto mining_state = base_.blockchain_.getMiningState();
             t2 = std::chrono::system_clock::now();
@@ -105,9 +120,13 @@ void CycleStateIntroduceBlock::blockReceivedCallback(IPeer& peer, const Collecti
                 //transactions
                 for (auto &element : block.transactions) {
                     if (base_.new_block_.transactions.find(element.first) == base_.new_block_.transactions.end()) {
-                        base_.new_block_.transactions[element.first] = element.second;
-                        if (base_.new_block_.transactions.size() > CollectionBlock::max_num_transactions) {
-                            base_.new_block_.transactions.erase(std::prev(base_.new_block_.transactions.end()));
+                        transaction_sub_block_counter[element.first]++;
+                        if(transaction_sub_block_counter[element.first] >= peers_necessary_for_granting_[std::min(static_cast<uint32_t>(peers_necessary_for_granting_.size())-1, num_propagations_in_current_cycle_)]) {
+                            base_.new_block_.transactions[element.first] = element.second;
+                            if (base_.new_block_.transactions.size() > CollectionBlock::max_num_transactions) {
+                                base_.new_block_.transactions.erase(std::prev(base_.new_block_.transactions.end()));
+                            }
+                            transaction_sub_block_counter.erase(element.first);
                         }
                     }
                 }
@@ -115,10 +134,13 @@ void CycleStateIntroduceBlock::blockReceivedCallback(IPeer& peer, const Collecti
                 //creations
                 for (auto &element : block.creations) {
                     if (base_.new_block_.creations.find(element.first) == base_.new_block_.creations.end()) {
-                        base_.new_block_.creations[element.first] = element.second;
-                        if (base_.new_block_.creations.size() >
-                            (CollectionBlock::max_num_creations - mining_state.num_minings_in_epoch)) {
-                            base_.new_block_.creations.erase(std::prev(base_.new_block_.creations.end()));
+                        creation_sub_block_counter[element.first]++;
+                        if(creation_sub_block_counter[element.first] >= peers_necessary_for_granting_[std::min(static_cast<uint32_t>(peers_necessary_for_granting_.size())-1, num_propagations_in_current_cycle_)]) {
+                            base_.new_block_.creations[element.first] = element.second;
+                            if (base_.new_block_.creations.size() > (CollectionBlock::max_num_creations - mining_state.num_minings_in_epoch)) {
+                                base_.new_block_.creations.erase(std::prev(base_.new_block_.creations.end()));
+                            }
+                            creation_sub_block_counter.erase(element.first);
                         }
                     }
                 }

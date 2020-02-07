@@ -4,27 +4,32 @@ project(full_node)
 option(BUILD_UNIT_TESTS "build unit tests" OFF)
 
 set(CMAKE_CXX_STANDARD 14)
+if(MSVC)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+endif()
 
 set(OPENSSL_USE_STATIC_LIBS FALSE)
 find_package(OpenSSL REQUIRED)
 
-set(Boost_USE_STATIC_LIBS        ON)
+if(MSVC)
+    set(Boost_USE_STATIC_LIBS       OFF)
+else()
+    set(Boost_USE_STATIC_LIBS       ON)
+endif()
 set(Boost_USE_STATIC_RUNTIME    OFF)
 find_package(Boost 1.58 REQUIRED
         system
         filesystem
         iostreams)
 
-find_package(CURL REQUIRED)
-
 include_directories(src/
         dep/libtorrent-rasterbar-1.2.2_extended/include/
         dep/cereal-1.3.0/include/
-        dep/curl-7.64.1/include/
+        dep/cpp-httplib-0.5.3/
         cmake/include/
         ${Boost_INCLUDE_DIRS}
-        ${OPENSSL_INCLUDE_DIR}
-        ${CURL_INCLUDE_DIRS})
+        ${OPENSSL_INCLUDE_DIR})
 
 add_library(full_node_library
         src/scn/Common/Common.cpp
@@ -52,17 +57,19 @@ add_library(full_node_library
 
 set(BUILD_TESTING OFF)
 add_subdirectory(dep/glog-0.4.0)
+if(MSVC)
+    set(BUILD_SHARED_LIBS OFF)
+    set(static_runtime OFF)
+endif()
 add_subdirectory(dep/libtorrent-rasterbar-1.2.2_extended)
 target_link_libraries(full_node_library
         glog::glog
         ${Boost_LIBRARIES}
         ${OPENSSL_CRYPTO_LIBRARY}
-        ${CURL_LIBRARIES}
         torrent-rasterbar
         )
 
-target_compile_options(full_node_library PRIVATE -Wall -rdynamic)
-target_link_options(full_node_library PRIVATE -rdynamic)
+target_compile_options(full_node_library PRIVATE -Wall)
 target_compile_definitions(full_node_library PRIVATE CEREAL_SERIALIZE_FUNCTION_NAME=ser)
 
 set(PRE_CONFIGURE_FILE "cmake/git_info.h.in")
@@ -81,8 +88,7 @@ target_link_libraries(full_node_cli
         full_node_library
         )
 
-target_compile_options(full_node_cli PRIVATE -Wall -rdynamic)
-target_link_options(full_node_cli PRIVATE -rdynamic)
+target_compile_options(full_node_cli PRIVATE -Wall)
 target_compile_definitions(full_node_cli PRIVATE CEREAL_SERIALIZE_FUNCTION_NAME=ser)
 
 if(BUILD_UNIT_TESTS)

@@ -18,6 +18,7 @@
 #include "scn/CryptoHelper/CryptoHelper.h"
 #include "scn/Blockchain/Blockchain.h"
 #include <chrono>
+#include <random>
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -33,7 +34,7 @@ MinerLocal::MinerLocal(uint32_t num_worker_threads)
 ,stats_check_counter_per_sec_(0)
 ,previous_epoch_highest_hash_(0)
 ,epoch_(0) {
-    std::srand(std::time(nullptr));
+
 }
 
 MinerLocal::~MinerLocal() {
@@ -43,7 +44,7 @@ MinerLocal::~MinerLocal() {
 void MinerLocal::start(const hash_t& previous_epoch_highest_hash,
                        const public_key_t& owner_public_key,
                        const epoch_t epoch,
-                       std::function<void(epoch_t, std::string &)> found_value_callback) {
+                       std::function<void(epoch_t, const std::string &)> found_value_callback) {
     LOG(INFO) << "Mining epoch " << epoch;
     if(isRunning())
     {
@@ -121,17 +122,27 @@ void MinerLocal::miningThread(uint32_t thread_id)
     pthread_setschedparam(pthread_self(), SCHED_IDLE, &p);
 #endif
 
-    std::string random_prefix = std::to_string(std::rand() % 1000000000);
+    uint32_t random_value = 0;
+    {
+        std::default_random_engine generator(time(0) + (thread_id * 12345));
+        std::uniform_int_distribution<uint32_t> distribution(0, 1000000000);
+        random_value = distribution(generator);
+    }
+    std::string random_prefix = std::to_string(random_value);
     std::string prefix = hash_helper::toString(previous_epoch_highest_hash_) + "_" +
             owner_public_key_.getAsShortString() + "_" + random_prefix + "_";
+    CryptoHelper::Hash hash_object_common;
+    hash_object_common.update(prefix);
 
     boost::multiprecision::uint1024_t value = 0;
     while(running_) {
-        std::string string_to_hash = prefix + value.str(0, std::ios_base::hex | std::ios_base::uppercase);
-        auto hash = CryptoHelper::calcHash(string_to_hash);
+        CryptoHelper::Hash hash_object_cycle = hash_object_common;
+        auto payload = value.str(0, std::ios_base::hex | std::ios_base::uppercase);
+        hash_object_cycle.update(payload);
+        auto hash = hash_object_cycle.finalize();
         stats_check_counter_++;
         if (hash >= min_allowed_value_ && hash <= max_allowed_value_) {
-            found_value_callback_(epoch_, string_to_hash);
+            found_value_callback_(epoch_, prefix + payload);
         }
         value++;
     }

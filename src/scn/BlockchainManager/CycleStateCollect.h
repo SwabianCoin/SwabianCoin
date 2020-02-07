@@ -36,6 +36,8 @@ namespace scn {
 
         virtual void onExit() override;
 
+        virtual State getState() const { return State::Collect; }
+
     protected:
         BlockchainManager& base_;
         uint32_t minings_in_cycle_;

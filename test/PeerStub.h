@@ -27,16 +27,19 @@ namespace scn {
 
         virtual ~PeerStub() {}
 
+        std::string info_ = "10.0.0.7";
+        std::string id_   = "123456";
+
         virtual void sendMessage(std::shared_ptr<std::string> message) {
 
         }
 
         virtual std::string getInfo() const {
-
+            return info_;
         }
 
         virtual bool sendBufferEmpty() const {
-
+            return true;
         }
 
         virtual void kick() {
@@ -48,11 +51,11 @@ namespace scn {
         }
 
         virtual std::string getId() const {
-
+            return id_;
         }
 
         virtual bool isConnected() const {
-
+            return true;
         }
     };
 

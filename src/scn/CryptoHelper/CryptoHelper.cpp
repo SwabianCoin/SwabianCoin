@@ -48,11 +48,7 @@ hash_t CryptoHelper::calcHash(const std::string &data) {
     SHA256_Init(&sha256);
     SHA256_Update(&sha256, data.c_str(), data.length());
     SHA256_Final(hash, &sha256);
-    boost::multiprecision::uint256_t ret;
-    for (int i = 0; i < 32; i++) {
-        ret += boost::multiprecision::uint256_t(hash[i]) * pow(boost::multiprecision::uint256_t(2), 8 * (32 - i - 1));
-    }
-    return ret;
+    return hash_helper::fromArray(hash);
 }
 
 hash_t CryptoHelper::calcHash(std::stringstream& data) {
@@ -66,11 +62,7 @@ hash_t CryptoHelper::calcHash(std::stringstream& data) {
         SHA256_Update(&sha256, buffer, bytes_read);
     }
     SHA256_Final(hash, &sha256);
-    boost::multiprecision::uint256_t ret;
-    for (int i = 0; i < 32; i++) {
-        ret += boost::multiprecision::uint256_t(hash[i]) * pow(boost::multiprecision::uint256_t(2), 8 * (32 - i - 1));
-    }
-    return ret;
+    return hash_helper::fromArray(hash);
 }
 
 hash_t CryptoHelper::calcHash(const void* data, uint32_t length) {
@@ -79,11 +71,7 @@ hash_t CryptoHelper::calcHash(const void* data, uint32_t length) {
     SHA256_Init(&sha256);
     SHA256_Update(&sha256, data, length);
     SHA256_Final(hash, &sha256);
-    boost::multiprecision::uint256_t ret;
-    for (int i = 0; i < 32; i++) {
-        ret += boost::multiprecision::uint256_t(hash[i]) * pow(boost::multiprecision::uint256_t(2), 8 * (32 - i - 1));
-    }
-    return ret;
+    return hash_helper::fromArray(hash);
 }
 
 signature_t CryptoHelper::calcSignature(const std::string &data) {
@@ -222,4 +210,19 @@ std::string CryptoHelper::encode64(const std::string &val) {
     using It = base64_from_binary<transform_width<std::string::const_iterator, 6, 8>>;
     auto tmp = std::string(It(std::begin(val)), It(std::end(val)));
     return tmp.append((3 - val.size() % 3) % 3, '=');
+}
+
+CryptoHelper::Hash::Hash() {
+    SHA256_Init(&context_);
+
+}
+
+void CryptoHelper::Hash::update(const std::string& data) {
+    SHA256_Update(&context_, data.c_str(), data.length());
+}
+
+hash_t CryptoHelper::Hash::finalize() {
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_Final(hash, &context_);
+    return hash_helper::fromArray(hash);
 }

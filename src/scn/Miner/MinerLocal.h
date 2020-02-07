@@ -33,7 +33,7 @@ namespace scn {
         virtual void start(const hash_t& previous_epoch_highest_hash,
                            const public_key_t& owner_public_key,
                            const epoch_t epoch,
-                           std::function<void(epoch_t,std::string&)> found_value_callback) override;
+                           std::function<void(epoch_t,const std::string&)> found_value_callback) override;
 
         virtual void stop() override;
 
@@ -65,7 +65,7 @@ namespace scn {
         hash_t previous_epoch_highest_hash_;
         public_key_t owner_public_key_;
         epoch_t epoch_;
-        std::function<void(epoch_t,std::string&)> found_value_callback_;
+        std::function<void(epoch_t,const std::string&)> found_value_callback_;
         hash_t min_allowed_value_;
         hash_t max_allowed_value_;
     };

@@ -64,20 +64,27 @@ namespace scn {
 
         virtual void propagateBlock(const BaselineBlock& block) {
             propagate_baseline_block_counter_++;
+            last_baseline_block_ = block;
         }
 
         virtual void propagateBlock(const CollectionBlock& block) {
             propagate_collection_block_counter_++;
+            last_collection_block_ = block;
         }
 
         virtual void propagateActivePeersList(const ActivePeersList& active_peers_list) {
             propagate_active_peers_list_counter_++;
+            last_active_peers_list_ = active_peers_list;
         }
 
         uint32_t num_connected_peers;
         std::function<void(IPeer&, const BaselineBlock&,bool)> callback_baseline_;
         std::function<void(IPeer&, const CollectionBlock&,bool)> callback_collection_;
         std::function<void(IPeer&, const ActivePeersList&)> callback_active_peers_;
+
+        BaselineBlock last_baseline_block_;
+        CollectionBlock last_collection_block_;
+        ActivePeersList last_active_peers_list_;
 
         uint32_t ask_for_block_counter_;
         uint32_t ask_for_last_baseline_block_counter_;

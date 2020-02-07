@@ -36,6 +36,8 @@ namespace scn {
 
         virtual void onExit() override;
 
+        virtual State getState() const { return State::IntroduceBaseline; }
+
     protected:
         BlockchainManager& base_;
     };

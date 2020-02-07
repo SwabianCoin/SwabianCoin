@@ -22,6 +22,7 @@
 #include "HashStreamBuf.h"
 #include <cereal/archives/portable_binary.hpp>
 #include <openssl/ecdsa.h>
+#include <openssl/sha.h>
 #include <sstream>
 
 
@@ -58,6 +59,15 @@ namespace scn {
         static bool isPublicKeyValid(const public_key_t& public_key);
 
         static bool isPrivateKeyValid(const private_key_t& private_key);
+
+        class Hash {
+        public:
+            Hash();
+            void update(const std::string& data);
+            hash_t finalize();
+        private:
+            SHA256_CTX context_;
+        };
 
     private:
         static EC_KEY* createPublicEC(const public_key_t& public_key);

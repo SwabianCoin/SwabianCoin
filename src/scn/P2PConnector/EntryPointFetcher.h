@@ -30,7 +30,9 @@ namespace scn {
         static const std::list<std::pair<std::string, std::uint16_t>> fetch();
 
     protected:
-        static const std::string entry_points_url_;
+        static const std::string entry_points_host_;
+        static const std::string entry_points_path_;
+        static const std::string ca_cert_path_;
         static const std::list<std::pair<std::string, std::uint16_t>> entry_points_fallback_;
     };
 

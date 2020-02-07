@@ -18,6 +18,9 @@
 #define FULL_NODE_CYCLESTATEINTRODUCEBLOCK_H
 
 #include "ICycleState.h"
+#include <array>
+#include <map>
+#include <set>
 
 
 namespace scn {
@@ -38,14 +41,22 @@ namespace scn {
 
         virtual void blockReceivedCallback(IPeer& peer, const CollectionBlock &block, bool reply) override;
 
+        virtual State getState() const { return State::IntroduceBlock; }
+
         static const blockchain_time_t time_between_propagations_ms_ = 4000;
 
     protected:
 
         BlockchainManager& base_;
         blockchain_time_t next_propagation_time_;
+        uint32_t num_propagations_in_current_cycle_;
 
-        std::set<hash_t> processed_blocks_;
+        std::map<hash_t, bool> processed_blocks_; //2nd parameter: valid/invalid
+
+        std::map<hash_t, uint32_t> creation_sub_block_counter;
+        std::map<hash_t, uint32_t> transaction_sub_block_counter;
+
+        static const std::array<uint32_t, 22> peers_necessary_for_granting_;
     };
 
 }

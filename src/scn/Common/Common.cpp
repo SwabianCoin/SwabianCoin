@@ -33,8 +33,8 @@ void scn::hash_helper::toArray(const hash_t& hash, uint8_t* array) {
 hash_t scn::hash_helper::fromArray(const uint8_t* array) {
     hash_t ret = 0;
     for(auto i=0;i<32;i++) {
-        ret |= array[i];
         ret <<=  8;
+        ret |= array[i];
     }
     return ret;
 }
