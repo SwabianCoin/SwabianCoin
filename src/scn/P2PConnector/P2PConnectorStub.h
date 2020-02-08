@@ -27,7 +27,13 @@ namespace scn {
         :num_connected_peers(10)
         ,callback_baseline_(NULL)
         ,callback_collection_(NULL)
-        ,callback_active_peers_(NULL) {};
+        ,callback_active_peers_(NULL)
+        ,ask_for_block_counter_(0)
+        ,ask_for_last_baseline_block_counter_(0)
+        ,propagate_baseline_block_counter_(0)
+        ,propagate_collection_block_counter_(0)
+        ,propagate_active_peers_list_counter_(0)
+        ,ask_for_block_uid_(0) {};
 
         virtual ~P2PConnectorStub() {};
 

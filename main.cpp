@@ -50,7 +50,6 @@ int startCommandLineApp(int argc, char* argv[]) {
     private_key_string << private_key_stream.rdbuf();
 
     scn::Blockchain blockchain("./blockchains/" + std::string(argv[4]) + "/");
-    blockchain.initEmptyChain();
     scn::P2PConnector p2p_connector(std::stoi(std::string(argv[4])), blockchain);
     scn::MinerLocal miner(std::stoi(std::string(argv[3])));
     scn::BlockchainManager manager(public_key, private_key_string.str(), blockchain, p2p_connector, miner);

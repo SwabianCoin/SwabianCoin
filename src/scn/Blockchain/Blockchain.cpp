@@ -28,7 +28,7 @@ Blockchain::Blockchain(const std::string& folder_path)
 :cache_(folder_path)
 ,folder_path_(folder_path)
 ,current_meta_data_initialized_(false) {
-
+    initEmptyChain();
 }
 
 
