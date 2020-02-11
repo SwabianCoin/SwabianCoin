@@ -29,7 +29,7 @@ namespace scn {
 
     class PeersMonitor {
     public:
-        PeersMonitor(ISynchronizedTimer& sync_timer);
+        explicit PeersMonitor(ISynchronizedTimer& sync_timer);
 
         virtual ~PeersMonitor();
 

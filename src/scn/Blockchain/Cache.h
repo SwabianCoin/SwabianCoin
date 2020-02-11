@@ -28,7 +28,7 @@ namespace scn {
     class Cache {
     public:
 
-        Cache(const std::string& folder_path);
+        explicit Cache(const std::string& folder_path);
 
         virtual ~Cache();
 

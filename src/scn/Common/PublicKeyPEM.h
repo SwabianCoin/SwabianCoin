@@ -24,9 +24,9 @@ namespace scn {
 
     class PublicKeyPEM {
     public:
-        PublicKeyPEM(const std::ifstream &public_key_file_stream);
+        explicit PublicKeyPEM(const std::ifstream &public_key_file_stream);
 
-        PublicKeyPEM(const std::string &public_key_string);
+        explicit PublicKeyPEM(const std::string &public_key_string);
 
         PublicKeyPEM();
 
