@@ -26,7 +26,7 @@ namespace scn {
 
     class CycleStateCollect : public ICycleState {
     public:
-        CycleStateCollect(BlockchainManager& base);
+        explicit CycleStateCollect(BlockchainManager& base);
 
         virtual ~CycleStateCollect();
 
@@ -36,7 +36,7 @@ namespace scn {
 
         virtual void onExit() override;
 
-        virtual State getState() const { return State::Collect; }
+        virtual State getState() const override { return State::Collect; }
 
     protected:
         BlockchainManager& base_;

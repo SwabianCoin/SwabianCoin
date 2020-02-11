@@ -41,7 +41,7 @@ namespace scn {
 
         virtual void blockReceivedCallback(IPeer& peer, const CollectionBlock &block, bool reply) override;
 
-        virtual State getState() const { return State::IntroduceBlock; }
+        virtual State getState() const override { return State::IntroduceBlock; }
 
         static const blockchain_time_t time_between_propagations_ms_ = 4000;
 

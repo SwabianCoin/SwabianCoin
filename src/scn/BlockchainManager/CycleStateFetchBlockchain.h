@@ -28,7 +28,7 @@ namespace scn {
 
     class CycleStateFetchBlockchain : public ICycleState {
     public:
-        CycleStateFetchBlockchain(BlockchainManager& base);
+        explicit CycleStateFetchBlockchain(BlockchainManager& base);
 
         virtual ~CycleStateFetchBlockchain();
 
@@ -42,7 +42,7 @@ namespace scn {
 
         virtual void blockReceivedCallback(IPeer& peer, const CollectionBlock &block, bool reply) override;
 
-        virtual State getState() const { return State::FetchBlockchain; }
+        virtual State getState() const override { return State::FetchBlockchain; }
 
         virtual bool isSynchronized() const;
 

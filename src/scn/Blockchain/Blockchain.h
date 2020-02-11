@@ -28,7 +28,7 @@ namespace scn {
     class Blockchain {
     public:
 
-        Blockchain(const std::string& folder_path);
+        explicit Blockchain(const std::string& folder_path);
 
         virtual ~Blockchain();
 

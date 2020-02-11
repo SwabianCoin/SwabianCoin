@@ -27,7 +27,7 @@ namespace scn {
 
     class MinerLocal : public IMiner {
     public:
-        MinerLocal(uint32_t num_worker_threads);
+        explicit MinerLocal(uint32_t num_worker_threads);
         virtual ~MinerLocal();
 
         virtual void start(const hash_t& previous_epoch_highest_hash,

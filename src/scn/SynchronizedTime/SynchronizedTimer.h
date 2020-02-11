@@ -26,7 +26,7 @@ namespace scn {
         SynchronizedTimer();
         virtual ~SynchronizedTimer();
 
-        virtual blockchain_time_t now() const;
+        virtual blockchain_time_t now() const override;
     };
 
 }
