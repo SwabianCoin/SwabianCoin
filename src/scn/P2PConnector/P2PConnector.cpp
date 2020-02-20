@@ -128,14 +128,14 @@ void P2PConnector::printPeerInfo() const {
 }
 
 
-void P2PConnector::registerBlockCallbacks(std::function<void(IPeer&, const BaselineBlock&,bool)> callback_baseline,
-                                    std::function<void(IPeer&, const CollectionBlock&,bool)> callback_collection) {
+void P2PConnector::registerBlockCallbacks(std::function<void(const peer_id_t&, std::shared_ptr<const BaselineBlock>, bool)> callback_baseline,
+                                    std::function<void(const peer_id_t&, std::shared_ptr<const CollectionBlock>, bool)> callback_collection) {
     callback_baseline_ = callback_baseline;
     callback_collection_ = callback_collection;
 }
 
 
-void P2PConnector::registerActivePeersCallback(std::function<void(IPeer&, const ActivePeersList&)> callback_active_peers) {
+void P2PConnector::registerActivePeersCallback(std::function<void(const peer_id_t&, const ActivePeersList&)> callback_active_peers) {
     callback_active_peers_ = callback_active_peers;
 }
 
@@ -232,6 +232,16 @@ void P2PConnector::propagateActivePeersList(const ActivePeersList& active_peers_
 }
 
 
+void P2PConnector::banPeer(const peer_id_t& peer_to_ban) {
+    LOCK_MUTEX_WATCHDOG(mtx_access_peers_);
+    for(auto& peer : peers_) {
+        if(peer->getId() == peer_to_ban) {
+            peer->ban();
+        }
+    }
+}
+
+
 bool P2PConnector::peerSendBuffersEmpty() {
     LOCK_MUTEX_WATCHDOG(mtx_access_peers_);
     for(auto& peer : peers_) {
@@ -303,22 +313,22 @@ void P2PConnector::receivedMessage(libtorrent::IPeer& peer, const std::string& m
             case MessageType::PropagateBaselineBlock: {
                 LOG(ERROR) << "PropagateBaselineBlock Start";
                 if (callback_baseline_ != nullptr) {
-                    BaselineBlock block;
+                    auto block = std::make_shared<BaselineBlock>();
                     bool reply;
-                    ia >> block;
+                    ia >> *block;
                     ia >> reply;
-                    callback_baseline_(peer, block, reply);
+                    callback_baseline_(peer.getId(), block, reply);
                 }
                 LOG(ERROR) << "PropagateBaselineBlock End";
                 break;
             }
             case MessageType::PropagateCollectionBlock: {
                 if (callback_collection_ != nullptr) {
-                    CollectionBlock block;
+                    auto block = std::make_shared<CollectionBlock>();
                     bool reply;
-                    ia >> block;
+                    ia >> *block;
                     ia >> reply;
-                    callback_collection_(peer, block, reply);
+                    callback_collection_(peer.getId(), block, reply);
                 }
                 break;
             }
@@ -340,10 +350,19 @@ void P2PConnector::receivedMessage(libtorrent::IPeer& peer, const std::string& m
                             oa << (uint8_t)type;
                             oa << *block;
                             oa << reply;
-                            if(peers_.find(&peer) != peers_.end()) {
-                                peer.sendMessage(std::make_shared<std::string>(std::move(oss.str())));
+                            {
+                                LOCK_MUTEX_WATCHDOG(mtx_access_peers_);
+                                if (peers_.find(&peer) != peers_.end()) {
+                                    peer.sendMessage(std::make_shared<std::string>(std::move(oss.str())));
+                                }
                             }
-                            while(peers_.find(&peer) != peers_.end() &&  !peer.sendBufferEmpty()) {
+                            while(true) {
+                                {
+                                    LOCK_MUTEX_WATCHDOG(mtx_access_peers_);
+                                    if (peers_.find(&peer) == peers_.end() || peer.sendBufferEmpty()) {
+                                        break;
+                                    }
+                                }
                                 std::this_thread::sleep_for(std::chrono::milliseconds(500));
                             }
                         } else {
@@ -402,7 +421,7 @@ void P2PConnector::receivedMessage(libtorrent::IPeer& peer, const std::string& m
                 if (callback_active_peers_ != nullptr) {
                     ActivePeersList list;
                     ia >> list;
-                    callback_active_peers_(peer, list);
+                    callback_active_peers_(peer.getId(), list);
                 }
                 break;
             }

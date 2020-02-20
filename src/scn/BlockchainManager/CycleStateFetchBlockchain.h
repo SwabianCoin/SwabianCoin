@@ -18,8 +18,11 @@
 #define FULL_NODE_CYCLESTATEFETCHBLOCKCHAIN_H
 
 #include "ICycleState.h"
+#include "BlockFetchAgent.h"
 #include <mutex>
+#include <map>
 #include <thread>
+#include <atomic>
 
 
 namespace scn {
@@ -38,9 +41,9 @@ namespace scn {
 
         virtual void onExit() override;
 
-        virtual void blockReceivedCallback(IPeer& peer, const BaselineBlock &block, bool reply) override;
+        virtual void blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const BaselineBlock> block, bool reply) override;
 
-        virtual void blockReceivedCallback(IPeer& peer, const CollectionBlock &block, bool reply) override;
+        virtual void blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const CollectionBlock> block, bool reply) override;
 
         virtual State getState() const override { return State::FetchBlockchain; }
 
@@ -52,12 +55,21 @@ namespace scn {
 
         virtual void fetchBlocksThread();
 
+        virtual block_uid_t fetchBaseline();
+
+        virtual void refillAgentMap(block_uid_t& next_id_to_fetch);
+
+        virtual void processFinishedAgents();
+
         BlockchainManager& base_;
 
-        bool synchronized_;
-        block_uid_t global_blockchain_newest_block_id_;
-        mutable std::mutex mtx_next_block_to_ask_for_;
-        block_uid_t next_block_to_ask_for_;
+        std::atomic<block_uid_t> global_blockchain_newest_block_id_;
+
+        std::recursive_mutex mtx_baseline_block_fetch_agent_;
+        std::shared_ptr<BlockFetchAgent<BaselineBlock>> baseline_block_fetch_agent_;
+        std::recursive_mutex mtx_block_fetch_agent_map_;
+        std::map<block_uid_t, BlockFetchAgent<CollectionBlock>> block_fetch_agent_map_;
+        static const uint32_t max_parallel_block_fetchers_ = 50;
 
         bool running_;
         std::shared_ptr<std::thread> fetch_blocks_thread_;

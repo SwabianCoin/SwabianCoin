@@ -15,14 +15,17 @@
  */
 
 #include "OutOfSyncDetector.h"
+#include "scn/BlockchainManager/BlockchainManager.h"
 
 using namespace scn;
 
 
-OutOfSyncDetector::OutOfSyncDetector()
-: out_of_sync(false)
-, newest_block_hash(0)
-, newest_block_id(0) {
+OutOfSyncDetector::OutOfSyncDetector(ISynchronizedTimer& sync_timer)
+: sync_timer_(sync_timer)
+, input_msgs_out_of_sync_(false)
+, newest_block_hash_(0)
+, newest_block_id_(0)
+, time_out_of_sync_(false) {
 
 }
 
@@ -33,27 +36,32 @@ OutOfSyncDetector::~OutOfSyncDetector() {
 
 
 void OutOfSyncDetector::restartCheckCycle(Blockchain& blockchain) {
-    LOCK_MUTEX_WATCHDOG(mtx_peer_in_sync_map_access_);
-    out_of_sync = false;
-    auto newest_block = blockchain.getNewestBlock();
-    newest_block_hash = newest_block->header.generic_header.block_hash;
-    newest_block_id = newest_block->header.block_uid;
-    peer_in_sync_map_.clear();
+    {
+        LOCK_MUTEX_WATCHDOG(mtx_peer_in_sync_map_access_);
+        input_msgs_out_of_sync_ = false;
+        auto newest_block = blockchain.getNewestBlock();
+        newest_block_hash_ = newest_block->header.generic_header.block_hash;
+        newest_block_id_ = newest_block->header.block_uid;
+        peer_in_sync_map_.clear();
+    }
+
+    auto now = sync_timer_.now();
+    time_out_of_sync_ = (BlockchainManager::getBlockId(now) != newest_block_id_);
 }
 
 
 bool OutOfSyncDetector::isOutOfSync() const {
-    return out_of_sync;
+    return input_msgs_out_of_sync_ || time_out_of_sync_;
 }
 
 
-void OutOfSyncDetector::blockReceivedCallback(IPeer& peer, const CollectionBlock &block, bool reply) {
-    if(!reply && block.header.block_uid == newest_block_id+1) {
+void OutOfSyncDetector::blockReceivedCallback(const peer_id_t& peer_id, const CollectionBlock &block, bool reply) {
+    if(!reply && block.header.block_uid == newest_block_id_+1) {
         LOCK_MUTEX_WATCHDOG(mtx_peer_in_sync_map_access_);
-        bool hash_in_sync_with_us = (block.header.generic_header.previous_block_hash == newest_block_hash);
-        peer_in_sync_map_[&peer] = hash_in_sync_with_us;
+        bool hash_in_sync_with_us = (block.header.generic_header.previous_block_hash == newest_block_hash_);
+        peer_in_sync_map_[peer_id] = hash_in_sync_with_us;
         if(!hash_in_sync_with_us) {
-            LOG(INFO) << "Peer not in sync: " << peer.getInfo() << " - our previous hash: " << newest_block_hash << " - theirs: " << block.header.generic_header.previous_block_hash;
+            LOG(INFO) << "Peer not in sync: " << peer_id << " - our previous hash: " << newest_block_hash_ << " - theirs: " << block.header.generic_header.previous_block_hash;
         }
         uint32_t peers_out_of_sync = 0;
         uint32_t num_peers = peer_in_sync_map_.size();
@@ -62,8 +70,8 @@ void OutOfSyncDetector::blockReceivedCallback(IPeer& peer, const CollectionBlock
                 peers_out_of_sync++;
             }
         }
-        out_of_sync = (static_cast<double>(peers_out_of_sync) / static_cast<double>(num_peers)) > 0.5;
-        if(out_of_sync) {
+        input_msgs_out_of_sync_ = (static_cast<double>(peers_out_of_sync) / static_cast<double>(num_peers)) > 0.5;
+        if(input_msgs_out_of_sync_) {
             LOG(INFO) << "Out of sync detected - num_peers: " << num_peers << " num_peers_out_of_sync: " << peers_out_of_sync;
         }
     }

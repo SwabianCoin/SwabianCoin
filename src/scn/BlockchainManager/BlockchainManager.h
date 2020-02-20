@@ -51,9 +51,9 @@ namespace scn {
                 ISynchronizedTimer& sync_timer = static_sync_timer);
         virtual ~BlockchainManager();
 
-        virtual void baselineBlockReceivedCallback(IPeer& peer, const BaselineBlock& block, bool reply);
+        virtual void baselineBlockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const BaselineBlock> block, bool reply);
 
-        virtual void collectionBlockReceivedCallback(IPeer& peer, const CollectionBlock& block, bool reply);
+        virtual void collectionBlockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const CollectionBlock> block, bool reply);
 
         virtual void foundHashCallback(const epoch_t epoch, const std::string& data);
 
@@ -70,6 +70,10 @@ namespace scn {
         static bool isBaselineBlock(block_uid_t block_uid);
 
         static block_uid_t getNextBaselineBlock(block_uid_t block_uid);
+
+        static block_uid_t getPreviousBaselineBlock(block_uid_t block_uid);
+
+        static block_uid_t getBlockId(blockchain_time_t blockchain_time);
 
     protected:
 
@@ -88,6 +92,8 @@ namespace scn {
         virtual void updateStateThread();
 
         void fetchBlockchain();
+
+        static const blockchain_time_t cycle_length_ms_ = 120000;
 
         public_key_t our_public_key_;
         private_key_t our_private_key_;
@@ -114,7 +120,7 @@ namespace scn {
         friend class CycleStateIntroduceBlock;
         friend class CycleStateIntroduceBaseline;
 
-        mutable std::mutex mtx_current_state_access_;
+        mutable std::recursive_mutex mtx_current_state_access_;
         ICycleState* current_state_;
 
         bool running_;

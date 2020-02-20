@@ -39,9 +39,18 @@ namespace scn {
 
     typedef uint64_t blockchain_time_t;
 
+    typedef std::string peer_id_t;
+
     #define LOCK_MUTEX_WATCHDOG(mtx) std::chrono::time_point<std::chrono::system_clock> t_start, t_stop; \
                                      t_start = std::chrono::system_clock::now(); \
                                      std::lock_guard<std::mutex> lock(mtx); \
+                                     t_stop = std::chrono::system_clock::now(); \
+                                     auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(t_stop - t_start).count(); \
+                                     if(millis >= 150) LOG(WARNING) << "Mutex watchdog: locking takes long time - " << millis << " ms";
+
+#define LOCK_MUTEX_WATCHDOG_REC(mtx) std::chrono::time_point<std::chrono::system_clock> t_start, t_stop; \
+                                     t_start = std::chrono::system_clock::now(); \
+                                     std::lock_guard<std::recursive_mutex> lock(mtx); \
                                      t_stop = std::chrono::system_clock::now(); \
                                      auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(t_stop - t_start).count(); \
                                      if(millis >= 150) LOG(WARNING) << "Mutex watchdog: locking takes long time - " << millis << " ms";

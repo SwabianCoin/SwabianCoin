@@ -93,16 +93,16 @@ void CycleStateIntroduceBlock::onExit() {
 }
 
 
-void CycleStateIntroduceBlock::blockReceivedCallback(IPeer& peer, const CollectionBlock &block, bool reply) {
+void CycleStateIntroduceBlock::blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const CollectionBlock> block, bool reply) {
     if(reply) {
         LOG(ERROR) << "received unexpected reply";
-        base_.peers_monitor_.reportViolation(peer);
+        base_.peers_monitor_.reportViolation(peer_id);
         return;
     }
-    LOG(INFO) << "CycleStateIntroduceBlock incoming block: " << hash_helper::toString(block.header.generic_header.block_hash);
-    auto processed_block_it = processed_blocks_.find(block.header.generic_header.block_hash);
-    if(block.header.block_uid != base_.new_block_.header.block_uid) {
-        LOG(INFO) << "  Ignoring block (unexpected block id " << block.header.block_uid << ")";
+    LOG(INFO) << "CycleStateIntroduceBlock incoming block: " << hash_helper::toString(block->header.generic_header.block_hash);
+    auto processed_block_it = processed_blocks_.find(block->header.generic_header.block_hash);
+    if(block->header.block_uid != base_.new_block_.header.block_uid) {
+        LOG(INFO) << "  Ignoring block (unexpected block id " << block->header.block_uid << ")";
     } else if(processed_block_it != processed_blocks_.end() &&
               creation_sub_block_counter.size() == 0 &&
               transaction_sub_block_counter.size() == 0) {
@@ -110,15 +110,15 @@ void CycleStateIntroduceBlock::blockReceivedCallback(IPeer& peer, const Collecti
     } else {
         std::chrono::time_point<std::chrono::system_clock> t0, t1, t2, t3, t4, t5;
         t0 = std::chrono::system_clock::now();
-        bool block_valid = (processed_block_it != processed_blocks_.end()) ? processed_block_it->second : base_.blockchain_.validateBlock(block);
-        processed_blocks_[block.header.generic_header.block_hash] = block_valid;
+        bool block_valid = (processed_block_it != processed_blocks_.end()) ? processed_block_it->second : base_.blockchain_.validateBlock(*block);
+        processed_blocks_[block->header.generic_header.block_hash] = block_valid;
         if (block_valid) {
             t1 = std::chrono::system_clock::now();
             auto mining_state = base_.blockchain_.getMiningState();
             t2 = std::chrono::system_clock::now();
-            if (block.header.generic_header.block_hash != base_.new_block_.header.generic_header.block_hash) {
+            if (block->header.generic_header.block_hash != base_.new_block_.header.generic_header.block_hash) {
                 //transactions
-                for (auto &element : block.transactions) {
+                for (auto &element : block->transactions) {
                     if (base_.new_block_.transactions.find(element.first) == base_.new_block_.transactions.end()) {
                         transaction_sub_block_counter[element.first]++;
                         if(transaction_sub_block_counter[element.first] >= peers_necessary_for_granting_[std::min(static_cast<uint32_t>(peers_necessary_for_granting_.size())-1, num_propagations_in_current_cycle_)]) {
@@ -132,11 +132,12 @@ void CycleStateIntroduceBlock::blockReceivedCallback(IPeer& peer, const Collecti
                 }
                 t3 = std::chrono::system_clock::now();
                 //creations
-                for (auto &element : block.creations) {
+                for (auto &element : block->creations) {
                     if (base_.new_block_.creations.find(element.first) == base_.new_block_.creations.end()) {
                         creation_sub_block_counter[element.first]++;
                         if(creation_sub_block_counter[element.first] >= peers_necessary_for_granting_[std::min(static_cast<uint32_t>(peers_necessary_for_granting_.size())-1, num_propagations_in_current_cycle_)]) {
                             base_.new_block_.creations[element.first] = element.second;
+                            getRidOfDuplicates(base_.new_block_.creations, element.second.data_value);
                             if (base_.new_block_.creations.size() > (CollectionBlock::max_num_creations - mining_state.num_minings_in_epoch)) {
                                 base_.new_block_.creations.erase(std::prev(base_.new_block_.creations.end()));
                             }
@@ -158,9 +159,32 @@ void CycleStateIntroduceBlock::blockReceivedCallback(IPeer& peer, const Collecti
             }
         } else {
             LOG(ERROR) << "CycleStateIntroduceBlock incoming block invalid!";
-            base_.peers_monitor_.reportViolation(peer);
+            base_.peers_monitor_.reportViolation(peer_id);
         }
     }
 
-    base_.out_of_sync_detector_.blockReceivedCallback(peer, block, reply);
+    base_.out_of_sync_detector_.blockReceivedCallback(peer_id, *block, reply);
+}
+
+
+void CycleStateIntroduceBlock::getRidOfDuplicates(std::map<hash_t, CreationSubBlock>& map_to_modify, const std::string& data_value_to_check) {
+    //if there are several creation sub blocks with the same data value, keep the one with the lowest block hash
+    bool already_found = false;
+    auto it = map_to_modify.begin();
+    while(it != map_to_modify.end()) {
+        bool erase = false;
+        if(it->second.data_value == data_value_to_check) {
+            if(already_found) {
+                erase = true;
+            } else {
+                already_found = true;
+            }
+        }
+
+        if(erase) {
+            it = map_to_modify.erase(it);
+        } else {
+            it++;
+        }
+    }
 }

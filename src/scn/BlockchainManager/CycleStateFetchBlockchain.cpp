@@ -22,8 +22,7 @@ using namespace scn;
 
 CycleStateFetchBlockchain::CycleStateFetchBlockchain(BlockchainManager& base)
 :base_(base)
-,synchronized_(false)
-,next_block_to_ask_for_(0) {
+,baseline_block_fetch_agent_(nullptr) {
 
 }
 
@@ -36,12 +35,7 @@ CycleStateFetchBlockchain::~CycleStateFetchBlockchain() {
 void CycleStateFetchBlockchain::onEnter() {
     LOG(INFO) << "enter fetch blockchain state";
 
-    synchronized_ = false;
     global_blockchain_newest_block_id_ = 0;
-    {
-        LOCK_MUTEX_WATCHDOG(mtx_next_block_to_ask_for_);
-        next_block_to_ask_for_ = 0;
-    }
     base_.blockchain_.initEmptyChain();
     running_ = true;
     fetch_blocks_thread_ = std::make_shared<std::thread>(&CycleStateFetchBlockchain::fetchBlocksThread, this);
@@ -49,6 +43,18 @@ void CycleStateFetchBlockchain::onEnter() {
 
 
 bool CycleStateFetchBlockchain::onCycle() {
+    {
+        LOCK_MUTEX_WATCHDOG_REC(mtx_baseline_block_fetch_agent_);
+        if (baseline_block_fetch_agent_) {
+            baseline_block_fetch_agent_->onCycle();
+        }
+    }
+    {
+        LOCK_MUTEX_WATCHDOG_REC(mtx_block_fetch_agent_map_);
+        for(auto& elem : block_fetch_agent_map_) {
+            elem.second.onCycle();
+        }
+    }
     return false;
 }
 
@@ -64,133 +70,148 @@ void CycleStateFetchBlockchain::onExit() {
 }
 
 
-void CycleStateFetchBlockchain::blockReceivedCallback(IPeer& peer, const BaselineBlock &block, bool reply) {
+void CycleStateFetchBlockchain::blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const BaselineBlock> block, bool reply) {
     if(reply) {
-        if(base_.blockchain_.getNewestBlockId() <= block.header.block_uid) {
-            if(Blockchain::validateBlockWithoutContext(block)) {
-                base_.blockchain_.setRootBlock(block);
-                LOG(INFO) << "Fetched block " << block.header.block_uid << ": "
-                          << hash_helper::toString(block.header.generic_header.block_hash);
-                {
-                    LOCK_MUTEX_WATCHDOG(mtx_next_block_to_ask_for_);
-                    next_block_to_ask_for_ = block.header.block_uid + 1;
-                }
-            } else {
-                LOG(ERROR) << "Received invalid baseline block";
-                base_.peers_monitor_.reportViolation(peer);
-            }
+        LOCK_MUTEX_WATCHDOG_REC(mtx_baseline_block_fetch_agent_);
+        if(baseline_block_fetch_agent_) {
+            baseline_block_fetch_agent_->blockReceivedCallback(peer_id, block);
         }
-        else {
-            LOG(INFO) << "Ignoring received baseline block: "
-                      << block.header.block_uid << ": "
-                      << hash_helper::toString(block.header.generic_header.block_hash);
-        }
-    } else {
-        synchronized_ = (block.header.block_uid == base_.blockchain_.getNewestBlockId()+1);
     }
 }
 
 
-void CycleStateFetchBlockchain::blockReceivedCallback(IPeer& peer, const CollectionBlock &block, bool reply) {
+void CycleStateFetchBlockchain::blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const CollectionBlock> block, bool reply) {
     if(reply) {
-        if(block.header.block_uid == base_.blockchain_.getNewestBlockId()+1) {
-            if (base_.blockchain_.validateBlock(block)) {
-                base_.blockchain_.addBlock(block);
-                LOG(INFO) << "Fetched block " << block.header.block_uid << ": "
-                          << hash_helper::toString(block.header.generic_header.block_hash);
-                {
-                    LOCK_MUTEX_WATCHDOG(mtx_next_block_to_ask_for_);
-                    next_block_to_ask_for_ = block.header.block_uid + 1;
-                }
-            } else {
-                LOG(ERROR) << "Received invalid collection block";
-                base_.peers_monitor_.reportViolation(peer);
+        LOCK_MUTEX_WATCHDOG_REC(mtx_block_fetch_agent_map_);
+        for(auto& elem : block_fetch_agent_map_) {
+            if(block->header.block_uid == elem.first) {
+                elem.second.blockReceivedCallback(peer_id, block);
+                break;
             }
         }
-        else {
-            LOG(INFO) << "Received block is not the one we need: " << block.header.block_uid;
-        }
-    } else {
-        synchronized_ = (block.header.block_uid == base_.blockchain_.getNewestBlockId()+1);
-        global_blockchain_newest_block_id_ = block.header.block_uid - 1;
     }
 }
 
 bool CycleStateFetchBlockchain::isSynchronized() const {
-    return synchronized_;
+    return percentSynchronizationDone() == 100;
 }
 
 uint8_t CycleStateFetchBlockchain::percentSynchronizationDone() const {
-    if(global_blockchain_newest_block_id_ == 0) {
+    block_uid_t local_global_blockchain_newest_block_id = global_blockchain_newest_block_id_;
+    if(local_global_blockchain_newest_block_id == 0) {
         return 0;
     }
     auto root_block_id = base_.blockchain_.getRootBlockId();
-    block_uid_t current_block_to_ask_for = 0;
-    {
-        std::lock_guard<std::mutex> lock(mtx_next_block_to_ask_for_);
-        current_block_to_ask_for = next_block_to_ask_for_;
-    }
-    if(current_block_to_ask_for <= root_block_id || global_blockchain_newest_block_id_ < root_block_id) {
+    auto newest_block_id = base_.blockchain_.getNewestBlockId();
+    auto current_block_to_ask_for = newest_block_id + 1;
+    if(current_block_to_ask_for <= root_block_id ||
+            local_global_blockchain_newest_block_id < root_block_id ||
+       root_block_id == newest_block_id) {
         return 0;
     }
 
     uint32_t percent = 100;
-    if(global_blockchain_newest_block_id_ - root_block_id != 0) {
-        percent = 100 * static_cast<uint32_t>(current_block_to_ask_for - 1 - root_block_id) /
-                static_cast<uint32_t>(global_blockchain_newest_block_id_ - root_block_id);
+    if(local_global_blockchain_newest_block_id - root_block_id + 1 != 0) {
+        percent = 100 * static_cast<uint32_t>(current_block_to_ask_for - root_block_id) /
+                static_cast<uint32_t>(local_global_blockchain_newest_block_id - root_block_id + 1);
+        percent = std::min(percent, 100u);
     }
     return percent;
 }
 
+block_uid_t CycleStateFetchBlockchain::fetchBaseline() {
+    {
+        LOCK_MUTEX_WATCHDOG_REC(mtx_baseline_block_fetch_agent_);
+        baseline_block_fetch_agent_ = std::make_shared<BlockFetchAgent<BaselineBlock>>(0, base_.p2p_connector_, base_.sync_timer_, 60000);
+    }
+    while(running_) {
+        {
+            LOCK_MUTEX_WATCHDOG_REC(mtx_baseline_block_fetch_agent_);
+            auto received_block = baseline_block_fetch_agent_->getReceivedBlock();
+            if(received_block != nullptr) {
+                if(base_.blockchain_.getNewestBlockId() <= received_block->second->header.block_uid) {
+                    if(Blockchain::validateBlockWithoutContext(*received_block->second)) {
+                        base_.blockchain_.setRootBlock(*received_block->second);
+                        LOG(INFO) << "Fetched block " << received_block->second->header.block_uid << ": "
+                                  << hash_helper::toString(received_block->second->header.generic_header.block_hash);
+                        block_uid_t ret = received_block->second->header.block_uid + 1;
+                        baseline_block_fetch_agent_ = nullptr;
+                        return ret;
+                    } else {
+                        LOG(ERROR) << "Received invalid baseline block";
+                        base_.peers_monitor_.reportViolation(received_block->first);
+                    }
+                }
+                else {
+                    LOG(INFO) << "Ignoring received baseline block: "
+                              << received_block->second->header.block_uid << ": "
+                              << hash_helper::toString(received_block->second->header.generic_header.block_hash);
+                }
+                baseline_block_fetch_agent_->restart();
+            }
+        }
+
+        global_blockchain_newest_block_id_ = BlockchainManager::getBlockId(base_.sync_timer_.now());
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+    {
+        LOCK_MUTEX_WATCHDOG_REC(mtx_baseline_block_fetch_agent_);
+        baseline_block_fetch_agent_ = nullptr;
+    }
+    return 0;
+}
+
+void CycleStateFetchBlockchain::refillAgentMap(block_uid_t& next_id_to_fetch) {
+    LOCK_MUTEX_WATCHDOG_REC(mtx_block_fetch_agent_map_);
+    while(block_fetch_agent_map_.size() < max_parallel_block_fetchers_ && !BlockchainManager::isBaselineBlock(next_id_to_fetch)) {
+        block_fetch_agent_map_.emplace(std::piecewise_construct,
+                                       std::forward_as_tuple(next_id_to_fetch),
+                                       std::forward_as_tuple(next_id_to_fetch, base_.p2p_connector_, base_.sync_timer_));
+        next_id_to_fetch++;
+    }
+}
+
+void CycleStateFetchBlockchain::processFinishedAgents() {
+    LOCK_MUTEX_WATCHDOG_REC(mtx_block_fetch_agent_map_);
+    auto it = block_fetch_agent_map_.begin();
+    while(it != block_fetch_agent_map_.end()) {
+        auto received_block = it->second.getReceivedBlock();
+        if(received_block == nullptr) {
+            break;
+        } else {
+            if (base_.blockchain_.validateBlock(*received_block->second)) {
+                base_.blockchain_.addBlock(*received_block->second);
+                LOG(INFO) << "Fetched block " << received_block->second->header.block_uid << ": "
+                          << hash_helper::toString(received_block->second->header.generic_header.block_hash);
+            } else {
+                LOG(ERROR) << "Received invalid collection block";
+                base_.peers_monitor_.reportViolation(received_block->first);
+            }
+            it = block_fetch_agent_map_.erase(it);
+        }
+    }
+}
+
 void CycleStateFetchBlockchain::fetchBlocksThread() {
     while(running_ && base_.p2p_connector_.numConnectedPeers() == 0) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 
+    auto next_id_to_fetch = fetchBaseline();
+
     while(running_) {
-        block_uid_t current_block_to_ask_for;
-        {
-            LOCK_MUTEX_WATCHDOG(mtx_next_block_to_ask_for_);
-            current_block_to_ask_for = next_block_to_ask_for_;
+        processFinishedAgents();
+
+        refillAgentMap(next_id_to_fetch);
+
+        global_blockchain_newest_block_id_ = BlockchainManager::getBlockId(base_.sync_timer_.now());
+
+        if(base_.getNextBaselineBlock(next_id_to_fetch) <= global_blockchain_newest_block_id_) {
+            LOG(INFO) << "Fast forward to new baseline block...";
+            next_id_to_fetch = fetchBaseline();
         }
 
-        if(current_block_to_ask_for == 0) {
-            base_.p2p_connector_.askForLastBaselineBlock();
-            LOG(INFO) << "Asking for baseline block...";
-        } else  {
-            if(base_.getNextBaselineBlock(current_block_to_ask_for) <= global_blockchain_newest_block_id_) {
-                base_.p2p_connector_.askForLastBaselineBlock();
-                LOG(INFO) << "Fast forward to new baseline block...";
-                {
-                    LOCK_MUTEX_WATCHDOG(mtx_next_block_to_ask_for_);
-                    next_block_to_ask_for_ = 0;
-                    current_block_to_ask_for = next_block_to_ask_for_;
-                }
-            } else {
-                base_.p2p_connector_.askForBlock(current_block_to_ask_for);
-                LOG(INFO) << "Asking for block " << current_block_to_ask_for << "...";
-            }
-        }
-
-        uint32_t wait_time_s = 5;
-        if(current_block_to_ask_for == 0 || BlockchainManager::isBaselineBlock(current_block_to_ask_for)) {
-            wait_time_s = 60;
-        }
-
-        for(uint32_t i=0;i<wait_time_s*10;i++) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            if(!running_) {
-                break;
-            }
-
-            {
-                LOCK_MUTEX_WATCHDOG(mtx_next_block_to_ask_for_);
-                if(next_block_to_ask_for_ != current_block_to_ask_for)  {
-                    break;
-                }
-            }
-        }
-
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }

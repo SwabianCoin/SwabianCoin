@@ -39,13 +39,15 @@ namespace scn {
 
         virtual void onExit() override;
 
-        virtual void blockReceivedCallback(IPeer& peer, const CollectionBlock &block, bool reply) override;
+        virtual void blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const CollectionBlock> block, bool reply) override;
 
         virtual State getState() const override { return State::IntroduceBlock; }
 
         static const blockchain_time_t time_between_propagations_ms_ = 4000;
 
     protected:
+
+        void getRidOfDuplicates(std::map<hash_t, CreationSubBlock>& map_to_modify, const std::string& data_value_to_check);
 
         BlockchainManager& base_;
         blockchain_time_t next_propagation_time_;

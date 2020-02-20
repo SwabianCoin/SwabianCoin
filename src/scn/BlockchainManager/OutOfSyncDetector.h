@@ -19,14 +19,14 @@
 
 #include "scn/Blockchain/BlockDefinitions.h"
 #include "scn/Blockchain/Blockchain.h"
-#include "scn/P2PConnector/P2PConnector.h"
+#include "scn/SynchronizedTime/ISynchronizedTimer.h"
 #include <atomic>
 
 namespace scn {
 
     class OutOfSyncDetector {
     public:
-        OutOfSyncDetector();
+        OutOfSyncDetector(ISynchronizedTimer& sync_timer);
 
         virtual ~OutOfSyncDetector();
 
@@ -34,14 +34,18 @@ namespace scn {
 
         virtual bool isOutOfSync() const;
 
-        virtual void blockReceivedCallback(IPeer& peer, const CollectionBlock &block, bool reply);
+        virtual void blockReceivedCallback(const peer_id_t& peer_id, const CollectionBlock &block, bool reply);
 
     protected:
-        std::atomic<bool> out_of_sync;
-        hash_t newest_block_hash;
-        block_uid_t newest_block_id;
+        ISynchronizedTimer& sync_timer_;
+
+        std::atomic<bool> input_msgs_out_of_sync_;
+        hash_t newest_block_hash_;
+        block_uid_t newest_block_id_;
         std::mutex mtx_peer_in_sync_map_access_;
-        std::map<IPeer*, bool> peer_in_sync_map_;
+        std::map<peer_id_t, bool> peer_in_sync_map_;
+
+        std::atomic<bool> time_out_of_sync_;
     };
 
 }

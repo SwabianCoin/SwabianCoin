@@ -30,7 +30,7 @@ public:
 
     TestBlockchainManager(bool synchronized = false)
     :peer_stubs_()
-    ,sync_timer_stub_(7*120000 + 1) //begin at cycle start
+    ,sync_timer_stub_((12892961ul + 1ul) * 120000ul + 1) //begin at cycle number 1
     ,blockchain_("./blockchain_unit_test/")
     ,p2p_connector_stub_()
     ,miner_(0)
@@ -90,19 +90,19 @@ protected:
 
         //send a valid block containing a creation to blockchain manager
         auto previous_block = blockchain_.getNewestBlock();
-        CollectionBlock collection_block;
-        collection_block.header.block_uid = previous_block->header.block_uid + 1;
-        collection_block.header.generic_header.previous_block_hash = previous_block->header.generic_header.block_hash;
+        auto collection_block = std::make_shared<CollectionBlock>();
+        collection_block->header.block_uid = previous_block->header.block_uid + 1;
+        collection_block->header.generic_header.previous_block_hash = previous_block->header.generic_header.block_hash;
         CreationSubBlock creation_sub_block;
         creation_sub_block.header.generic_header.previous_block_hash = previous_block->header.generic_header.block_hash;
         creation_sub_block.creator = example_owner_public_key;
         creation_sub_block.data_value = valid_data_values_epoch_0[0];
         crypto_.fillSignature(creation_sub_block);
         CryptoHelper::fillHash(creation_sub_block);
-        collection_block.creations[creation_sub_block.header.generic_header.block_hash] = creation_sub_block;
-        CryptoHelper::fillHash(collection_block);
+        collection_block->creations[creation_sub_block.header.generic_header.block_hash] = creation_sub_block;
+        CryptoHelper::fillHash(*collection_block);
         for(uint32_t i=0;i<sending_peers;i++) {
-            p2p_connector_stub_.callback_collection_(peer_stubs_[i], collection_block, false);
+            p2p_connector_stub_.callback_collection_(peer_stubs_[i].getId(), collection_block, false);
         }
 
         //wait some time to let blockchain manager merge the creation
@@ -160,6 +160,21 @@ TEST_F(TestBlockchainManager, getNextBaselineBlockMethod) {
     EXPECT_EQ(BlockchainManager::getNextBaselineBlock(24482), 25201);
 }
 
+TEST_F(TestBlockchainManager, getPreviousBaselineBlockMethod) {
+    EXPECT_EQ(BlockchainManager::getPreviousBaselineBlock(1), 1);
+    EXPECT_EQ(BlockchainManager::getPreviousBaselineBlock(2), 1);
+    EXPECT_EQ(BlockchainManager::getPreviousBaselineBlock(600), 1);
+    EXPECT_EQ(BlockchainManager::getPreviousBaselineBlock(720), 1);
+    EXPECT_EQ(BlockchainManager::getPreviousBaselineBlock(721), 721);
+    EXPECT_EQ(BlockchainManager::getPreviousBaselineBlock(722), 721);
+    EXPECT_EQ(BlockchainManager::getPreviousBaselineBlock(1440), 721);
+    EXPECT_EQ(BlockchainManager::getPreviousBaselineBlock(1441), 1441);
+    EXPECT_EQ(BlockchainManager::getPreviousBaselineBlock(1442), 1441);
+    EXPECT_EQ(BlockchainManager::getPreviousBaselineBlock(24480), 23761);
+    EXPECT_EQ(BlockchainManager::getPreviousBaselineBlock(24481), 24481);
+    EXPECT_EQ(BlockchainManager::getPreviousBaselineBlock(24482), 24481);
+}
+
 TEST_F(TestBlockchainManager, InitialUnsynchronized) {
     EXPECT_EQ(blockchain_manager_.percentBlockchainSynchronized(), 0);
 
@@ -171,41 +186,92 @@ TEST_F(TestBlockchainManager, InitialUnsynchronized) {
 
 TEST_F(TestBlockchainManager, Synchronization) {
 
-    //pregenerate some blocks
-    BaselineBlock root_block;
-    root_block.header.block_uid = 1;
-    root_block.data_value_hashes.resize(1);
-    CryptoHelper::fillHash(root_block);
-    std::vector<CollectionBlock> collection_blocks;
-    for(uint32_t i=0;i<5;i++) {
-        collection_blocks.emplace_back();
-        collection_blocks.back().header.block_uid = i+2;
-        collection_blocks.back().header.generic_header.previous_block_hash = (i==0) ? root_block.header.generic_header.block_hash : collection_blocks[i-1].header.generic_header.block_hash;
-        CryptoHelper::fillHash(collection_blocks.back());
+    sync_timer_stub_.resetTime((12892961ul + 10ul) * 120000ul + 1); //let time jump to cycle 10
+    //pregenerate simple blockchain
+    auto remote_blockchain = std::make_shared<Blockchain>("./remote_blockchain/");
+    {
+        BaselineBlock root_block;
+        root_block.header.block_uid = 1;
+        root_block.data_value_hashes.resize(1);
+        CryptoHelper::fillHash(root_block);
+        remote_blockchain->setRootBlock(root_block);
+        std::vector<CollectionBlock> collection_blocks;
+        for (uint32_t i = 0; i < 9; i++) {
+            collection_blocks.emplace_back();
+            collection_blocks.back().header.block_uid = i + 2;
+            collection_blocks.back().header.generic_header.previous_block_hash = (i == 0)
+                                                                                 ? root_block.header.generic_header.block_hash
+                                                                                 : collection_blocks[i - 1].header.generic_header.block_hash;
+            CryptoHelper::fillHash(collection_blocks.back());
+            remote_blockchain->addBlock(collection_blocks.back());
+        }
     }
 
-    //let some time go by
-    sync_timer_stub_.letTheTimeGoOn(200000);
+    EXPECT_LT(blockchain_manager_.percentBlockchainSynchronized(), 100);
+
+    p2p_connector_stub_.setRemoteBlockchain(peer_stubs_[0].getId(), remote_blockchain);
+
+    //let some time go by (half a cycle)
+    sync_timer_stub_.letTheTimeGoOn(20000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    sync_timer_stub_.letTheTimeGoOn(20000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    sync_timer_stub_.letTheTimeGoOn(20000);
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    //check if manager asked for baseline block
-    EXPECT_GE(p2p_connector_stub_.ask_for_last_baseline_block_counter_, 1);
-
-    //send baseline block to manager
-    p2p_connector_stub_.callback_baseline_(peer_stubs_[0], root_block, true);
-
-    for(uint32_t i=0;i<collection_blocks.size();i++) {
-        //let some time go by
-        sync_timer_stub_.letTheTimeGoOn(200000);
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-        //check if manager asked for follow up block
-        EXPECT_GE(p2p_connector_stub_.ask_for_block_counter_, 1);
-        EXPECT_EQ(p2p_connector_stub_.ask_for_block_uid_, i+2);
-
-        //send follow up block
-        p2p_connector_stub_.callback_collection_(peer_stubs_[0], collection_blocks[i], true);
+    ASSERT_EQ(remote_blockchain->getRootBlockId(), blockchain_.getRootBlockId());
+    ASSERT_EQ(remote_blockchain->getNewestBlockId(), blockchain_.getNewestBlockId());
+    for(auto block_id = blockchain_.getRootBlockId();block_id <= blockchain_.getNewestBlockId();block_id++) {
+        auto block = blockchain_.getBlock(block_id);
+        auto remote_block = remote_blockchain->getBlock(block_id);
+        EXPECT_EQ(block->header.generic_header.block_hash, remote_block->header.generic_header.block_hash);
     }
+    EXPECT_EQ(blockchain_manager_.percentBlockchainSynchronized(), 100);
+}
+
+TEST_F(TestBlockchainManager, SynchronizationLong) {
+
+    sync_timer_stub_.resetTime((12892961ul + 80ul) * 120000ul + 1); //let time jump to cycle 80
+    //pregenerate simple blockchain
+    auto remote_blockchain = std::make_shared<Blockchain>("./remote_blockchain/");
+    {
+        BaselineBlock root_block;
+        root_block.header.block_uid = 1;
+        root_block.data_value_hashes.resize(1);
+        CryptoHelper::fillHash(root_block);
+        remote_blockchain->setRootBlock(root_block);
+        std::vector<CollectionBlock> collection_blocks;
+        for (uint32_t i = 0; i < 80; i++) {
+            collection_blocks.emplace_back();
+            collection_blocks.back().header.block_uid = i + 2;
+            collection_blocks.back().header.generic_header.previous_block_hash = (i == 0)
+                                                                                 ? root_block.header.generic_header.block_hash
+                                                                                 : collection_blocks[i - 1].header.generic_header.block_hash;
+            CryptoHelper::fillHash(collection_blocks.back());
+            remote_blockchain->addBlock(collection_blocks.back());
+        }
+    }
+
+    EXPECT_LT(blockchain_manager_.percentBlockchainSynchronized(), 100);
+
+    p2p_connector_stub_.setRemoteBlockchain(peer_stubs_[0].getId(), remote_blockchain);
+
+    //let some time go by (half a cycle)
+    sync_timer_stub_.letTheTimeGoOn(20000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    sync_timer_stub_.letTheTimeGoOn(20000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    sync_timer_stub_.letTheTimeGoOn(20000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    ASSERT_EQ(remote_blockchain->getRootBlockId(), blockchain_.getRootBlockId());
+    ASSERT_EQ(remote_blockchain->getNewestBlockId(), blockchain_.getNewestBlockId());
+    for(auto block_id = blockchain_.getRootBlockId();block_id <= blockchain_.getNewestBlockId();block_id++) {
+        auto block = blockchain_.getBlock(block_id);
+        auto remote_block = remote_blockchain->getBlock(block_id);
+        EXPECT_EQ(block->header.generic_header.block_hash, remote_block->header.generic_header.block_hash);
+    }
+    EXPECT_EQ(blockchain_manager_.percentBlockchainSynchronized(), 100);
 }
 
 TEST_F(TestBlockchainManagerSynchronized, CycleStateChanges) {
@@ -257,18 +323,18 @@ TEST_F(TestBlockchainManagerSynchronized, MergeBlocks) {
 
     //send a valid block containing a creation to blockchain manager
     auto previous_block = blockchain_.getNewestBlock();
-    CollectionBlock collection_block;
-    collection_block.header.block_uid = previous_block->header.block_uid + 1;
-    collection_block.header.generic_header.previous_block_hash = previous_block->header.generic_header.block_hash;
+    auto collection_block = std::make_shared<CollectionBlock>();
+    collection_block->header.block_uid = previous_block->header.block_uid + 1;
+    collection_block->header.generic_header.previous_block_hash = previous_block->header.generic_header.block_hash;
     CreationSubBlock creation_sub_block;
     creation_sub_block.header.generic_header.previous_block_hash = previous_block->header.generic_header.block_hash;
     creation_sub_block.creator = example_owner_public_key;
     creation_sub_block.data_value = valid_data_values_epoch_0[0];
     crypto_.fillSignature(creation_sub_block);
     CryptoHelper::fillHash(creation_sub_block);
-    collection_block.creations[creation_sub_block.header.generic_header.block_hash] = creation_sub_block;
-    CryptoHelper::fillHash(collection_block);
-    p2p_connector_stub_.callback_collection_(peer_stubs_[0], collection_block, false);
+    collection_block->creations[creation_sub_block.header.generic_header.block_hash] = creation_sub_block;
+    CryptoHelper::fillHash(*collection_block);
+    p2p_connector_stub_.callback_collection_(peer_stubs_[0].getId(), collection_block, false);
 
     //wait some time to let blockchain manager merge the creation
     sync_timer_stub_.letTheTimeGoOn(6000);
@@ -280,6 +346,119 @@ TEST_F(TestBlockchainManagerSynchronized, MergeBlocks) {
     EXPECT_EQ(p2p_connector_stub_.last_collection_block_.creations.begin()->first,creation_sub_block.header.generic_header.block_hash);
 }
 
+TEST_F(TestBlockchainManagerSynchronized, MergeBlocksDuplicate) {
+    //wait one complete cycle (settling)
+    sync_timer_stub_.letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    sync_timer_stub_.letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    p2p_connector_stub_.propagate_collection_block_counter_ = 0;
+
+    //proceed from collect phase to introduce block phase
+    sync_timer_stub_.letTheTimeGoOn(30000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    //check if initial block has been sent by blockchain manager
+    EXPECT_EQ(p2p_connector_stub_.propagate_collection_block_counter_, 1);
+    EXPECT_EQ(p2p_connector_stub_.last_collection_block_.creations.size(), 0);
+
+    //send a valid block containing two creations with different hashes but same data value to blockchain manager
+    auto previous_block = blockchain_.getNewestBlock();
+    auto collection_block = std::make_shared<CollectionBlock>();
+    collection_block->header.block_uid = previous_block->header.block_uid + 1;
+    collection_block->header.generic_header.previous_block_hash = previous_block->header.generic_header.block_hash;
+    CreationSubBlock creation_sub_block_a, creation_sub_block_b;
+    {
+        creation_sub_block_a.header.generic_header.previous_block_hash = previous_block->header.generic_header.block_hash;
+        creation_sub_block_a.creator = example_owner_public_key;
+        creation_sub_block_a.data_value = valid_data_values_epoch_0[0];
+        crypto_.fillSignature(creation_sub_block_a);
+        CryptoHelper::fillHash(creation_sub_block_a);
+        collection_block->creations[creation_sub_block_a.header.generic_header.block_hash] = creation_sub_block_a;
+    }
+    {
+        creation_sub_block_b.header.generic_header.previous_block_hash = previous_block->header.generic_header.block_hash;
+        creation_sub_block_b.creator = example_owner_public_key;
+        creation_sub_block_b.data_value = valid_data_values_epoch_0[0];
+        crypto_.fillSignature(creation_sub_block_b);
+        CryptoHelper::fillHash(creation_sub_block_b);
+        collection_block->creations[creation_sub_block_b.header.generic_header.block_hash] = creation_sub_block_b;
+    }
+    CryptoHelper::fillHash(*collection_block);
+    p2p_connector_stub_.callback_collection_(peer_stubs_[0].getId(), collection_block, false);
+
+    //wait some time to let blockchain manager merge the creation
+    sync_timer_stub_.letTheTimeGoOn(6000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    //check if blockchain manager merged the creation twice
+    EXPECT_EQ(p2p_connector_stub_.propagate_collection_block_counter_, 2);
+    ASSERT_LT(p2p_connector_stub_.last_collection_block_.creations.size(), 2);
+}
+
+TEST_F(TestBlockchainManagerSynchronized, MergeBlocksDuplicate2) {
+    //wait one complete cycle (settling)
+    sync_timer_stub_.letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    sync_timer_stub_.letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    p2p_connector_stub_.propagate_collection_block_counter_ = 0;
+
+    //proceed from collect phase to introduce block phase
+    sync_timer_stub_.letTheTimeGoOn(30000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    //check if initial block has been sent by blockchain manager
+    EXPECT_EQ(p2p_connector_stub_.propagate_collection_block_counter_, 1);
+    EXPECT_EQ(p2p_connector_stub_.last_collection_block_.creations.size(), 0);
+
+    //send a valid block containing a creation to blockchain manager
+    auto previous_block = blockchain_.getNewestBlock();
+    auto collection_block = std::make_shared<CollectionBlock>();
+    collection_block->header.block_uid = previous_block->header.block_uid + 1;
+    collection_block->header.generic_header.previous_block_hash = previous_block->header.generic_header.block_hash;
+    CreationSubBlock creation_sub_block;
+    creation_sub_block.header.generic_header.previous_block_hash = previous_block->header.generic_header.block_hash;
+    creation_sub_block.creator = example_owner_public_key;
+    creation_sub_block.data_value = valid_data_values_epoch_0[0];
+    crypto_.fillSignature(creation_sub_block);
+    CryptoHelper::fillHash(creation_sub_block);
+    collection_block->creations[creation_sub_block.header.generic_header.block_hash] = creation_sub_block;
+    std::cout << "Hash 1: " << hash_helper::toString(creation_sub_block.header.generic_header.block_hash) << std::endl;
+    CryptoHelper::fillHash(*collection_block);
+    p2p_connector_stub_.callback_collection_(peer_stubs_[0].getId(), collection_block, false);
+
+    sync_timer_stub_.letTheTimeGoOn(4000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    //send a valid block containing the same creation but a different hash to blockchain manager
+    collection_block->creations.clear();
+    collection_block->header.generic_header.block_hash = 0;
+    creation_sub_block.header.generic_header.block_hash = 0;
+    creation_sub_block.signature = "";
+    collection_block->header.block_uid = previous_block->header.block_uid + 1;
+    collection_block->header.generic_header.previous_block_hash = previous_block->header.generic_header.block_hash;
+    creation_sub_block.header.generic_header.previous_block_hash = previous_block->header.generic_header.block_hash;
+    creation_sub_block.creator = example_owner_public_key;
+    creation_sub_block.data_value = valid_data_values_epoch_0[0];
+    crypto_.fillSignature(creation_sub_block);
+    CryptoHelper::fillHash(creation_sub_block);
+    collection_block->creations[creation_sub_block.header.generic_header.block_hash] = creation_sub_block;
+    std::cout << "Hash 2: " << hash_helper::toString(creation_sub_block.header.generic_header.block_hash) << std::endl;
+    CryptoHelper::fillHash(*collection_block);
+    p2p_connector_stub_.callback_collection_(peer_stubs_[0].getId(), collection_block, false);
+
+    //wait some time to let blockchain manager merge the creation
+    sync_timer_stub_.letTheTimeGoOn(6000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    //check if blockchain manager merged the creation only once
+    EXPECT_EQ(p2p_connector_stub_.propagate_collection_block_counter_, 3);
+    ASSERT_EQ(p2p_connector_stub_.last_collection_block_.creations.size(), 1);
+    EXPECT_EQ(p2p_connector_stub_.last_collection_block_.creations.begin()->second.data_value,creation_sub_block.data_value);
+}
 
 
 TEST_F(TestBlockchainManagerSynchronized, AcceptEarlyBlock) {
@@ -304,4 +483,43 @@ TEST_F(TestBlockchainManagerSynchronized, AcceptLateBlockMultiplePeers1) {
 
 TEST_F(TestBlockchainManagerSynchronized, AcceptLateBlockMultiplePeers2) {
     CheckBlockAcceptance(75000, true, 7);
+}
+
+
+TEST_F(TestBlockchainManagerSynchronized, OutOfSyncDetectionGoodWeather) {
+    //wait one complete cycle (settling)
+    sync_timer_stub_.letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    sync_timer_stub_.letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    EXPECT_EQ(blockchain_manager_.getCurrentState(), ICycleState::State::Collect);
+
+    //wait one complete cycle
+    sync_timer_stub_.letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    sync_timer_stub_.letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    EXPECT_EQ(blockchain_manager_.getCurrentState(), ICycleState::State::Collect);
+}
+
+TEST_F(TestBlockchainManagerSynchronized, OutOfSyncDetectionBadWeather1) {
+    //wait one complete cycle (settling)
+    sync_timer_stub_.letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    sync_timer_stub_.letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    EXPECT_EQ(blockchain_manager_.getCurrentState(), ICycleState::State::Collect);
+
+    sync_timer_stub_.letTheTimeGoOn(120000); //fast forward some cycles
+
+    //wait one complete cycle
+    sync_timer_stub_.letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    sync_timer_stub_.letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    EXPECT_EQ(blockchain_manager_.getCurrentState(), ICycleState::State::FetchBlockchain);
 }

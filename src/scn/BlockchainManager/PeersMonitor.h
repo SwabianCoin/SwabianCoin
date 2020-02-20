@@ -29,13 +29,13 @@ namespace scn {
 
     class PeersMonitor {
     public:
-        explicit PeersMonitor(ISynchronizedTimer& sync_timer);
+        explicit PeersMonitor(ISynchronizedTimer& sync_timer, IP2PConnector& p2p_connector);
 
         virtual ~PeersMonitor();
 
-        virtual void blockReceivedCallback(IPeer& peer, const CollectionBlock &block, bool reply);
+        virtual void blockReceivedCallback(const peer_id_t& peer_id, const CollectionBlock &block, bool reply);
 
-        virtual void reportViolation(IPeer& peer);
+        virtual void reportViolation(const peer_id_t& peer_id);
 
     protected:
 
@@ -44,9 +44,10 @@ namespace scn {
         static const uint32_t min_allowed_avg_time_between_propagations_ms_ = CycleStateIntroduceBlock::time_between_propagations_ms_*4/5;
 
         ISynchronizedTimer& sync_timer_;
-        std::map<std::string, std::list<blockchain_time_t>> peer_message_history_;
+        IP2PConnector& p2p_connector_;
+        std::map<peer_id_t, std::list<blockchain_time_t>> peer_message_history_;
         std::mutex mtx_peer_violations_map_access_;
-        std::map<std::string, uint32_t> peer_violations_map_;
+        std::map<peer_id_t, uint32_t> peer_violations_map_;
     };
 
 }

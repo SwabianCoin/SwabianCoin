@@ -51,10 +51,10 @@ namespace scn {
 
         virtual void printPeerInfo() const;
 
-        virtual void registerBlockCallbacks(std::function<void(IPeer&, const BaselineBlock&,bool)> callback_baseline,
-                                            std::function<void(IPeer&, const CollectionBlock&,bool)> callback_collection) override;
+        virtual void registerBlockCallbacks(std::function<void(const peer_id_t&, std::shared_ptr<const BaselineBlock>, bool)> callback_baseline,
+                                            std::function<void(const peer_id_t&, std::shared_ptr<const CollectionBlock>, bool)> callback_collection) override;
 
-        virtual void registerActivePeersCallback(std::function<void(IPeer&, const ActivePeersList&)> callback_active_peers) override;
+        virtual void registerActivePeersCallback(std::function<void(const peer_id_t& peer_id, const ActivePeersList&)> callback_active_peers) override;
 
         virtual void askForBlock(block_uid_t uid) override;
 
@@ -65,6 +65,8 @@ namespace scn {
         virtual void propagateBlock(const CollectionBlock& block) override;
 
         virtual void propagateActivePeersList(const ActivePeersList& active_peers_list) override;
+
+        virtual void banPeer(const peer_id_t& peer_to_ban) override;
 
         virtual bool peerSendBuffersEmpty();
 
@@ -95,9 +97,9 @@ namespace scn {
         mutable std::mutex mtx_access_peers_;
         std::set<libtorrent::IPeer*> peers_;
 
-        std::function<void(IPeer&, const BaselineBlock&,bool)> callback_baseline_;
-        std::function<void(IPeer&, const CollectionBlock&,bool)> callback_collection_;
-        std::function<void(IPeer&, const ActivePeersList&)> callback_active_peers_;
+        std::function<void(const peer_id_t&, std::shared_ptr<const BaselineBlock>, bool)> callback_baseline_;
+        std::function<void(const peer_id_t&, std::shared_ptr<const CollectionBlock>, bool)> callback_collection_;
+        std::function<void(const peer_id_t&, const ActivePeersList&)> callback_active_peers_;
     };
 
 }

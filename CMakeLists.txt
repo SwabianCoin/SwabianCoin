@@ -47,6 +47,7 @@ add_library(full_node_library
         src/scn/BlockchainManager/OutOfSyncDetector.cpp
         src/scn/BlockchainManager/PeersMonitor.cpp
         src/scn/BlockchainManager/ActivePeersCollector.cpp
+        src/scn/BlockchainManager/BlockFetchAgent.cpp
         src/scn/CryptoHelper/CryptoHelper.cpp
         src/scn/CryptoHelper/HashStreamBuf.cpp
         src/scn/P2PConnector/P2PConnector.cpp
@@ -69,7 +70,9 @@ target_link_libraries(full_node_library
         torrent-rasterbar
         )
 
-target_compile_options(full_node_library PRIVATE -Wall)
+if(NOT MSVC)
+    target_compile_options(full_node_library PRIVATE -Wall)
+endif()
 target_compile_definitions(full_node_library PRIVATE CEREAL_SERIALIZE_FUNCTION_NAME=ser)
 
 set(PRE_CONFIGURE_FILE "cmake/git_info.h.in")
@@ -88,7 +91,9 @@ target_link_libraries(full_node_cli
         full_node_library
         )
 
-target_compile_options(full_node_cli PRIVATE -Wall)
+if(NOT MSVC)
+    target_compile_options(full_node_cli PRIVATE -Wall)
+endif()
 target_compile_definitions(full_node_cli PRIVATE CEREAL_SERIALIZE_FUNCTION_NAME=ser)
 
 if(BUILD_UNIT_TESTS)

@@ -37,10 +37,7 @@ hash_t HashStreamBuf::digestHash() {
     (void)flushBuffer();
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256_Final(hash, &sha256_);
-    boost::multiprecision::uint256_t ret;
-    for (int i = 0; i < 32; i++) {
-        ret += boost::multiprecision::uint256_t(hash[i]) * pow(boost::multiprecision::uint256_t(2), 8 * (32 - i - 1));
-    }
+    hash_t ret = hash_helper::fromArray(hash);
     SHA256_Init(&sha256_);
     return ret;
 }

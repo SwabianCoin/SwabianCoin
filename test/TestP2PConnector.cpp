@@ -89,15 +89,15 @@ public:
     }
 
 protected:
-    void baselineBlockReceivedCallback(IPeer& peer, const BaselineBlock& block, bool reply) {
-        last_received_baseline_block = std::make_shared<BaselineBlock>(block);
+    void baselineBlockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const BaselineBlock> block, bool reply) {
+        last_received_baseline_block = block;
     }
 
-    void collectionBlockReceivedCallback(IPeer& peer, const CollectionBlock& block, bool reply) {
-        last_received_collection_block = std::make_shared<CollectionBlock>(block);
+    void collectionBlockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const CollectionBlock> block, bool reply) {
+        last_received_collection_block = block;
     }
 
-    void activePeersListReceivedCallback(IPeer& peer, const ActivePeersList& active_peers_list) {
+    void activePeersListReceivedCallback(const peer_id_t& peer_id, const ActivePeersList& active_peers_list) {
         last_received_active_peers_list = std::make_shared<ActivePeersList>(active_peers_list);
     }
 
@@ -105,8 +105,8 @@ protected:
     Blockchain blockchain_;
     P2PConnector p2p_connector_;
 
-    std::shared_ptr<BaselineBlock> last_received_baseline_block;
-    std::shared_ptr<CollectionBlock> last_received_collection_block;
+    std::shared_ptr<const BaselineBlock> last_received_baseline_block;
+    std::shared_ptr<const CollectionBlock> last_received_collection_block;
     std::shared_ptr<ActivePeersList> last_received_active_peers_list;
 };
 
@@ -222,8 +222,8 @@ TEST_F(TestP2PConnector, receiveValidCollectionBlock) {
     EXPECT_NE(last_received_collection_block, nullptr);
     EXPECT_EQ(last_received_collection_block->header.block_uid, 721);
     EXPECT_EQ(last_received_collection_block->header.generic_header.previous_block_hash, 12345);
-    EXPECT_EQ(last_received_collection_block->creations[123].data_value, "abc");
-    EXPECT_EQ(last_received_collection_block->transactions[456].post_owner, PublicKeyPEM("-----BEGIN PUBLIC KEY-----\ndef\n-----END PUBLIC KEY-----"));
+    EXPECT_EQ(last_received_collection_block->creations.at(123).data_value, "abc");
+    EXPECT_EQ(last_received_collection_block->transactions.at(456).post_owner, PublicKeyPEM("-----BEGIN PUBLIC KEY-----\ndef\n-----END PUBLIC KEY-----"));
     EXPECT_EQ(last_received_collection_block->header.generic_header.block_hash, block.header.generic_header.block_hash);
 }
 
@@ -241,8 +241,8 @@ TEST_F(TestP2PConnector, receiveInvalidCollectionBlock1) {
     EXPECT_TRUE(last_received_collection_block == nullptr || (
             last_received_collection_block->header.block_uid != 721 ||
             last_received_collection_block->header.generic_header.previous_block_hash != 12345 ||
-            last_received_collection_block->creations[123].data_value != "abc" ||
-            last_received_collection_block->transactions[456].post_owner != PublicKeyPEM("-----BEGIN PUBLIC KEY-----\ndef\n-----END PUBLIC KEY-----") ||
+            last_received_collection_block->creations.at(123).data_value != "abc" ||
+            last_received_collection_block->transactions.at(456).post_owner != PublicKeyPEM("-----BEGIN PUBLIC KEY-----\ndef\n-----END PUBLIC KEY-----") ||
             last_received_collection_block->header.generic_header.block_hash != block.header.generic_header.block_hash));
 }
 
@@ -261,8 +261,8 @@ TEST_F(TestP2PConnector, receiveInvalidCollectionBlock2) {
     EXPECT_TRUE(last_received_collection_block == nullptr || (
             last_received_collection_block->header.block_uid != 721 ||
             last_received_collection_block->header.generic_header.previous_block_hash != 12345 ||
-            last_received_collection_block->creations[123].data_value != "abc" ||
-            last_received_collection_block->transactions[456].post_owner != PublicKeyPEM("-----BEGIN PUBLIC KEY-----\ndef\n-----END PUBLIC KEY-----") ||
+            last_received_collection_block->creations.at(123).data_value != "abc" ||
+            last_received_collection_block->transactions.at(456).post_owner != PublicKeyPEM("-----BEGIN PUBLIC KEY-----\ndef\n-----END PUBLIC KEY-----") ||
             last_received_collection_block->header.generic_header.block_hash != block.header.generic_header.block_hash));
 }
 
@@ -281,8 +281,8 @@ TEST_F(TestP2PConnector, receiveInvalidCollectionBlock3) {
     EXPECT_TRUE(last_received_collection_block == nullptr || (
             last_received_collection_block->header.block_uid != 721 ||
             last_received_collection_block->header.generic_header.previous_block_hash != 12345 ||
-            last_received_collection_block->creations[123].data_value != "abc" ||
-            last_received_collection_block->transactions[456].post_owner != PublicKeyPEM("-----BEGIN PUBLIC KEY-----\ndef\n-----END PUBLIC KEY-----") ||
+            last_received_collection_block->creations.at(123).data_value != "abc" ||
+            last_received_collection_block->transactions.at(456).post_owner != PublicKeyPEM("-----BEGIN PUBLIC KEY-----\ndef\n-----END PUBLIC KEY-----") ||
             last_received_collection_block->header.generic_header.block_hash != block.header.generic_header.block_hash));
 }
 
@@ -301,8 +301,8 @@ TEST_F(TestP2PConnector, receiveInvalidCollectionBlock4) {
     EXPECT_TRUE(last_received_collection_block == nullptr || (
             last_received_collection_block->header.block_uid != 721 ||
             last_received_collection_block->header.generic_header.previous_block_hash != 12345 ||
-            last_received_collection_block->creations[123].data_value != "abc" ||
-            last_received_collection_block->transactions[456].post_owner != PublicKeyPEM("-----BEGIN PUBLIC KEY-----\ndef\n-----END PUBLIC KEY-----") ||
+            last_received_collection_block->creations.at(123).data_value != "abc" ||
+            last_received_collection_block->transactions.at(456).post_owner != PublicKeyPEM("-----BEGIN PUBLIC KEY-----\ndef\n-----END PUBLIC KEY-----") ||
             last_received_collection_block->header.generic_header.block_hash != block.header.generic_header.block_hash));
 }
 

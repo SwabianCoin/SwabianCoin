@@ -36,7 +36,7 @@ ActivePeersCollector::~ActivePeersCollector() {
 }
 
 
-void ActivePeersCollector::activePeersListReceivedCallback(IPeer& peer, const ActivePeersList& active_peers_list) {
+void ActivePeersCollector::activePeersListReceivedCallback(const peer_id_t& peer_id, const ActivePeersList& active_peers_list) {
     LOCK_MUTEX_WATCHDOG(mtx_temp_active_peers_list_);
     temp_active_peers_list_.active_peers_bloom_filter.merge(active_peers_list.active_peers_bloom_filter);
 }

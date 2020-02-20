@@ -31,7 +31,7 @@ namespace scn {
         ActivePeersCollector(IP2PConnector& p2p_connector, public_key_t& owner_key);
         virtual ~ActivePeersCollector();
 
-        virtual void activePeersListReceivedCallback(IPeer& peer, const ActivePeersList& active_peers_list);
+        virtual void activePeersListReceivedCallback(const peer_id_t& peer_id, const ActivePeersList& active_peers_list);
 
         virtual void restartListBuilding();
 
