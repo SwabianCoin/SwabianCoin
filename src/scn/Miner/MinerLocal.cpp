@@ -124,7 +124,7 @@ void MinerLocal::miningThread(uint32_t thread_id)
 
     uint32_t random_value = 0;
     {
-        std::default_random_engine generator(time(0) + (thread_id * 12345));
+        std::default_random_engine generator(time(nullptr) + (thread_id * 12345));
         std::uniform_int_distribution<uint32_t> distribution(0, 1000000000);
         random_value = distribution(generator);
     }

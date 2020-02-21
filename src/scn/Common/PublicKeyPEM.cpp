@@ -42,9 +42,7 @@ PublicKeyPEM::PublicKeyPEM()
 }
 
 
-PublicKeyPEM::~PublicKeyPEM() {
-
-}
+PublicKeyPEM::~PublicKeyPEM() = default;
 
 
 void PublicKeyPEM::initFromString(const std::string &public_key_string) {
@@ -70,12 +68,12 @@ void PublicKeyPEM::initFromString(const std::string &public_key_string) {
 }
 
 
-const std::string PublicKeyPEM::getAsFullString() const {
+std::string PublicKeyPEM::getAsFullString() const {
     return prefix_ + short_string_ + postfix_;
 }
 
 
-const std::string PublicKeyPEM::getAsShortString() const {
+std::string PublicKeyPEM::getAsShortString() const {
     return short_string_;
 }
 

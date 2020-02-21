@@ -95,14 +95,7 @@ P2PConnector::P2PConnector(uint16_t port, const Blockchain& blockchain)
 }
 
 
-P2PConnector::~P2PConnector() {
-    libtorrent::setFcoinConnector(NULL);
-    running_ = false;
-    alert_thread_->join();
-    if(send_baseline_thread_ && send_baseline_thread_->joinable()) {
-        send_baseline_thread_->join();
-    }
-}
+P2PConnector::~P2PConnector() = default;
 
 
 void P2PConnector::connect() {
@@ -149,7 +142,7 @@ void P2PConnector::askForBlock(block_uid_t uid) {
     oa << uid;
     auto connected_peers = getConnectedPeers();
     LOCK_MUTEX_WATCHDOG(mtx_access_peers_);
-    if(connected_peers.size() > 0) {
+    if(!connected_peers.empty()) {
         auto it = connected_peers.begin();
         std::advance(it, std::rand() % connected_peers.size());
         if((*it) != peer_sending_baseline_to_) {
@@ -167,7 +160,7 @@ void P2PConnector::askForLastBaselineBlock() {
     oa << (uint8_t)type;
     auto connected_peers = getConnectedPeers();
     LOCK_MUTEX_WATCHDOG(mtx_access_peers_);
-    if(connected_peers.size() > 0) {
+    if(!connected_peers.empty()) {
         auto it = connected_peers.begin();
         std::advance(it, std::rand() % connected_peers.size());
         if((*it) != peer_sending_baseline_to_) {
@@ -270,7 +263,7 @@ void P2PConnector::alertThread() {
         std::vector<lt::alert*> alerts;
         session_->pop_alerts(&alerts);
 
-        if(alerts.size() > 0) {
+        if(!alerts.empty()) {
             /*for (auto &alert : alerts) {
                 if(alert->category() & lt::alert::error_notification) {
                     LOG(ERROR) << "Libtorrent alert: " << alert->category() << " " << alert->message();

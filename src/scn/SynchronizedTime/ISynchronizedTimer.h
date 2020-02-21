@@ -23,8 +23,8 @@ namespace scn {
 
     class ISynchronizedTimer {
     public:
-        ISynchronizedTimer() {};
-        virtual ~ISynchronizedTimer() {};
+        ISynchronizedTimer() = default;
+        virtual ~ISynchronizedTimer() = default;
 
         virtual blockchain_time_t now() const = 0;
     };

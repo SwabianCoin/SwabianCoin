@@ -32,9 +32,9 @@ namespace scn {
 
         virtual ~PublicKeyPEM();
 
-        const std::string getAsFullString() const;
+        std::string getAsFullString() const;
 
-        const std::string getAsShortString() const;
+        std::string getAsShortString() const;
 
         bool isEmpty() const;
 

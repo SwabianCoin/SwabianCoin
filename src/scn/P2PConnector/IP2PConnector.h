@@ -28,8 +28,8 @@ namespace scn {
 
     class IP2PConnector {
     public:
-        IP2PConnector() {};
-        virtual ~IP2PConnector() {};
+        IP2PConnector() = default;
+        virtual ~IP2PConnector() = default;
 
         virtual void connect() = 0;
 

@@ -28,24 +28,24 @@ namespace scn {
     class MinerLocal : public IMiner {
     public:
         explicit MinerLocal(uint32_t num_worker_threads);
-        virtual ~MinerLocal();
+        ~MinerLocal() override;
 
-        virtual void start(const hash_t& previous_epoch_highest_hash,
-                           const public_key_t& owner_public_key,
-                           const epoch_t epoch,
-                           std::function<void(epoch_t,const std::string&)> found_value_callback) override;
+        void start(const hash_t& previous_epoch_highest_hash,
+                   const public_key_t& owner_public_key,
+                   epoch_t epoch,
+                   std::function<void(epoch_t,const std::string&)> found_value_callback) override;
 
-        virtual void stop() override;
+        void stop() override;
 
-        virtual bool isRunning() const override;
+        bool isRunning() const override;
 
         virtual uint32_t numWorkerThreads() const;
 
         virtual void changeNumWorkerThreads(uint32_t num_worker_threads);
 
-        virtual epoch_t getEpoch() const override;
+        epoch_t getEpoch() const override;
 
-        virtual uint64_t numChecksPerSecond() const override;
+        uint64_t numChecksPerSecond() const override;
 
     protected:
 

@@ -31,9 +31,7 @@ ActivePeersCollector::ActivePeersCollector(IP2PConnector& p2p_connector, public_
 }
 
 
-ActivePeersCollector::~ActivePeersCollector() {
-
-}
+ActivePeersCollector::~ActivePeersCollector() = default;
 
 
 void ActivePeersCollector::activePeersListReceivedCallback(const peer_id_t& peer_id, const ActivePeersList& active_peers_list) {

@@ -42,8 +42,8 @@ namespace scn {
 
     class BlockchainManager {
     public:
-        BlockchainManager(public_key_t our_public_key,
-                private_key_t our_private_key,
+        BlockchainManager(const public_key_t& our_public_key,
+                const private_key_t& our_private_key,
                 Blockchain& blockchain,
                 IP2PConnector& p2p_connector,
                 IMiner& miner,
@@ -51,13 +51,13 @@ namespace scn {
                 ISynchronizedTimer& sync_timer = static_sync_timer);
         virtual ~BlockchainManager();
 
-        virtual void baselineBlockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const BaselineBlock> block, bool reply);
+        virtual void baselineBlockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const BaselineBlock>& block, bool reply);
 
-        virtual void collectionBlockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const CollectionBlock> block, bool reply);
+        virtual void collectionBlockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const CollectionBlock>& block, bool reply);
 
-        virtual void foundHashCallback(const epoch_t epoch, const std::string& data);
+        virtual void foundHashCallback(epoch_t epoch, const std::string& data);
 
-        virtual void triggerTransaction(const public_key_t& receiver, const uint64_t fraction);
+        virtual void triggerTransaction(const public_key_t& receiver, uint64_t fraction);
 
         virtual void join();
 

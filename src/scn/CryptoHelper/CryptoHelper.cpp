@@ -30,9 +30,9 @@ using namespace scn;
 CryptoHelper::CryptoHelper(const public_key_t& public_key, const private_key_t& private_key) {
     public_ec_ = createPublicEC(public_key);
     private_ec_ = createPrivateEC(private_key);
-    if(public_ec_ == NULL) {
+    if(public_ec_ == nullptr) {
         LOG(ERROR) << "Public key invalid!";
-    } else if(private_ec_ == NULL) {
+    } else if(private_ec_ == nullptr) {
         LOG(ERROR) << "Private key invalid!";
     }
 }
@@ -78,7 +78,7 @@ signature_t CryptoHelper::calcSignature(const std::string &data) {
     EVP_MD_CTX *ctx = EVP_MD_CTX_create();
     EVP_PKEY *private_key = EVP_PKEY_new();
     EVP_PKEY_assign_EC_KEY(private_key, private_ec_);
-    if (EVP_DigestSignInit(ctx, NULL, EVP_sha256(), NULL, private_key) <= 0) {
+    if (EVP_DigestSignInit(ctx, nullptr, EVP_sha256(), nullptr, private_key) <= 0) {
         EVP_MD_CTX_destroy(ctx);
         return signature_t();
     }
@@ -87,7 +87,7 @@ signature_t CryptoHelper::calcSignature(const std::string &data) {
         return signature_t();
     }
     size_t msg_len_enc;
-    if (EVP_DigestSignFinal(ctx, NULL, &msg_len_enc) <= 0) {
+    if (EVP_DigestSignFinal(ctx, nullptr, &msg_len_enc) <= 0) {
         EVP_MD_CTX_destroy(ctx);
         return signature_t();
     }
@@ -108,14 +108,14 @@ signature_t CryptoHelper::calcSignature(const std::string &data) {
 bool CryptoHelper::verifySignature(const std::string &data, const signature_t &signature, const public_key_t& public_key) {
     std::string signature_raw = decode64(signature);
     EC_KEY* public_ec = createPublicEC(public_key);
-    if(public_ec == NULL) {
+    if(public_ec == nullptr) {
         return false;
     }
 
     EVP_MD_CTX *ctx = EVP_MD_CTX_create();
     EVP_PKEY *public_key_int = EVP_PKEY_new();
     EVP_PKEY_assign_EC_KEY(public_key_int, public_ec);
-    if (EVP_DigestVerifyInit(ctx, NULL, EVP_sha256(), NULL, public_key_int) <= 0) {
+    if (EVP_DigestVerifyInit(ctx, nullptr, EVP_sha256(), nullptr, public_key_int) <= 0) {
         EC_KEY_free(public_ec);
         EVP_MD_CTX_destroy(ctx);
         return false;
@@ -130,10 +130,6 @@ bool CryptoHelper::verifySignature(const std::string &data, const signature_t &s
         EC_KEY_free(public_ec);
         EVP_MD_CTX_destroy(ctx);
         return true;
-    } else if (AuthStatus == 0) {
-        EC_KEY_free(public_ec);
-        EVP_MD_CTX_destroy(ctx);
-        return false;
     } else {
         EC_KEY_free(public_ec);
         EVP_MD_CTX_destroy(ctx);
@@ -144,7 +140,7 @@ bool CryptoHelper::verifySignature(const std::string &data, const signature_t &s
 
 bool CryptoHelper::isPublicKeyValid(const public_key_t& public_key) {
     EC_KEY* key = createPublicEC(public_key);
-    bool valid = (key != NULL);
+    bool valid = (key != nullptr);
     EC_KEY_free(key);
     return valid;
 }
@@ -152,33 +148,33 @@ bool CryptoHelper::isPublicKeyValid(const public_key_t& public_key) {
 
 bool CryptoHelper::isPrivateKeyValid(const private_key_t& private_key) {
     EC_KEY* key = createPrivateEC(private_key);
-    bool valid = (key != NULL);
+    bool valid = (key != nullptr);
     EC_KEY_free(key);
     return valid;
 }
 
 
 EC_KEY *CryptoHelper::createPublicEC(const public_key_t &public_key) {
-    EC_KEY *ec_key = NULL;
+    EC_KEY *ec_key = nullptr;
     BIO *keybio;
     auto public_key_string = public_key.getAsFullString();
     keybio = BIO_new_mem_buf((void *)public_key_string.c_str(), public_key_string.length());
-    if (keybio == NULL) {
-        return NULL;
+    if (keybio == nullptr) {
+        return nullptr;
     }
-    ec_key = PEM_read_bio_EC_PUBKEY(keybio, &ec_key, NULL, NULL);
+    ec_key = PEM_read_bio_EC_PUBKEY(keybio, &ec_key, nullptr, nullptr);
     BIO_free(keybio);
     return ec_key;
 }
 
 
 EC_KEY *CryptoHelper::createPrivateEC(const private_key_t &private_key) {
-    EC_KEY *ec_key = NULL;
+    EC_KEY *ec_key = nullptr;
     BIO *keybio = BIO_new_mem_buf((void *) private_key.c_str(), private_key.length());
-    if (keybio == NULL) {
-        return NULL;
+    if (keybio == nullptr) {
+        return nullptr;
     }
-    ec_key = PEM_read_bio_ECPrivateKey(keybio, &ec_key, NULL, NULL);
+    ec_key = PEM_read_bio_ECPrivateKey(keybio, &ec_key, nullptr, nullptr);
     BIO_free(keybio);
     return ec_key;
 }

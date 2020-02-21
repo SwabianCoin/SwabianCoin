@@ -33,19 +33,19 @@ namespace scn {
     public:
         explicit CycleStateFetchBlockchain(BlockchainManager& base);
 
-        virtual ~CycleStateFetchBlockchain();
+        ~CycleStateFetchBlockchain() override;
 
-        virtual void onEnter() override;
+        void onEnter() override;
 
-        virtual bool onCycle() override;
+        bool onCycle() override;
 
-        virtual void onExit() override;
+        void onExit() override;
 
-        virtual void blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const BaselineBlock> block, bool reply) override;
+        void blockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const BaselineBlock>& block, bool reply) override;
 
-        virtual void blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const CollectionBlock> block, bool reply) override;
+        void blockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const CollectionBlock>& block, bool reply) override;
 
-        virtual State getState() const override { return State::FetchBlockchain; }
+        State getState() const override { return State::FetchBlockchain; }
 
         virtual bool isSynchronized() const;
 

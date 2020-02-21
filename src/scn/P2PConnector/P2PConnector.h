@@ -41,40 +41,40 @@ namespace scn {
     class P2PConnector : public IP2PConnector, public libtorrent::IFcoinConnector {
     public:
         P2PConnector(uint16_t port, const Blockchain& blockchain);
-        virtual ~P2PConnector();
+        ~P2PConnector() override;
 
-        virtual void connect() override;
+        void connect() override;
 
-        virtual void disconnect() override;
+        void disconnect() override;
 
-        virtual uint32_t numConnectedPeers() const override;
+        uint32_t numConnectedPeers() const override;
 
-        virtual void printPeerInfo() const;
+        void printPeerInfo() const;
 
-        virtual void registerBlockCallbacks(std::function<void(const peer_id_t&, std::shared_ptr<const BaselineBlock>, bool)> callback_baseline,
-                                            std::function<void(const peer_id_t&, std::shared_ptr<const CollectionBlock>, bool)> callback_collection) override;
+        void registerBlockCallbacks(std::function<void(const peer_id_t&, std::shared_ptr<const BaselineBlock>, bool)> callback_baseline,
+                                    std::function<void(const peer_id_t&, std::shared_ptr<const CollectionBlock>, bool)> callback_collection) override;
 
-        virtual void registerActivePeersCallback(std::function<void(const peer_id_t& peer_id, const ActivePeersList&)> callback_active_peers) override;
+        void registerActivePeersCallback(std::function<void(const peer_id_t& peer_id, const ActivePeersList&)> callback_active_peers) override;
 
-        virtual void askForBlock(block_uid_t uid) override;
+        void askForBlock(block_uid_t uid) override;
 
-        virtual void askForLastBaselineBlock() override;
+        void askForLastBaselineBlock() override;
 
-        virtual void propagateBlock(const BaselineBlock& block) override;
+        void propagateBlock(const BaselineBlock& block) override;
 
-        virtual void propagateBlock(const CollectionBlock& block) override;
+        void propagateBlock(const CollectionBlock& block) override;
 
-        virtual void propagateActivePeersList(const ActivePeersList& active_peers_list) override;
+        void propagateActivePeersList(const ActivePeersList& active_peers_list) override;
 
-        virtual void banPeer(const peer_id_t& peer_to_ban) override;
+        void banPeer(const peer_id_t& peer_to_ban) override;
 
         virtual bool peerSendBuffersEmpty();
 
-        virtual void registerPeer(libtorrent::IPeer& peer) override;
+        void registerPeer(libtorrent::IPeer& peer) override;
 
-        virtual void unregisterPeer(libtorrent::IPeer& peer) override;
+        void unregisterPeer(libtorrent::IPeer& peer) override;
 
-        virtual void receivedMessage(libtorrent::IPeer& peer, const std::string& compressed_message) override;
+        void receivedMessage(libtorrent::IPeer& peer, const std::string& compressed_message) override;
 
     protected:
 

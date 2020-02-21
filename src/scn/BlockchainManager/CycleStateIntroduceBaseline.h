@@ -28,15 +28,15 @@ namespace scn {
     public:
         explicit CycleStateIntroduceBaseline(BlockchainManager& base);
 
-        virtual ~CycleStateIntroduceBaseline();
+        ~CycleStateIntroduceBaseline() override;
 
-        virtual void onEnter() override;
+        void onEnter() override;
 
-        virtual bool onCycle() override;
+        bool onCycle() override;
 
-        virtual void onExit() override;
+        void onExit() override;
 
-        virtual State getState() const override { return State::IntroduceBaseline; }
+        State getState() const override { return State::IntroduceBaseline; }
 
     protected:
         BlockchainManager& base_;

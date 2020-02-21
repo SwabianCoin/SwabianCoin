@@ -26,7 +26,7 @@ namespace scn {
 
     class OutOfSyncDetector {
     public:
-        OutOfSyncDetector(ISynchronizedTimer& sync_timer);
+        explicit OutOfSyncDetector(ISynchronizedTimer& sync_timer);
 
         virtual ~OutOfSyncDetector();
 

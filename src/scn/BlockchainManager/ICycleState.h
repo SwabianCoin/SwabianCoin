@@ -33,9 +33,9 @@ namespace scn {
             IntroduceBaseline = 4
         };
 
-        ICycleState() {};
+        ICycleState() = default;
 
-        virtual ~ICycleState() {};
+        virtual ~ICycleState() = default;
 
         virtual void onEnter() = 0;
 
@@ -43,9 +43,9 @@ namespace scn {
 
         virtual void onExit() = 0;
 
-        virtual void blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const BaselineBlock> block, bool reply) {}
+        virtual void blockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const BaselineBlock>& block, bool reply) {}
 
-        virtual void blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const CollectionBlock> block, bool reply) {}
+        virtual void blockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const CollectionBlock>& block, bool reply) {}
 
         virtual State getState() const = 0;
     };

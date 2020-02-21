@@ -28,7 +28,7 @@ namespace scn {
     public:
         HashStreamBuf(uint32_t buffer_size = 8192);
 
-        virtual ~HashStreamBuf();
+        ~HashStreamBuf() override;
 
         hash_t digestHash();
 
@@ -36,9 +36,9 @@ namespace scn {
 
         bool flushBuffer();
 
-        virtual int_type overflow (int_type c) override;
+        int_type overflow (int_type c) override;
 
-        virtual int sync() override;
+        int sync() override;
 
         std::vector<char> buffer_;
         SHA256_CTX sha256_;
