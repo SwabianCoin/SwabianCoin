@@ -36,7 +36,7 @@ namespace scn {
 
         virtual void importBlockchain(const std::string& folder_path);
 
-        virtual const std::shared_ptr<BaseBlock> getBlock(const block_uid_t uid) const;
+        virtual const std::shared_ptr<BaseBlock> getBlock(block_uid_t uid) const;
 
         virtual const std::shared_ptr<BaseBlock> getRootBlock() const;
 

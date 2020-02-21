@@ -33,9 +33,7 @@ CycleStateIntroduceBlock::CycleStateIntroduceBlock(BlockchainManager& base)
 }
 
 
-CycleStateIntroduceBlock::~CycleStateIntroduceBlock() {
-
-}
+CycleStateIntroduceBlock::~CycleStateIntroduceBlock() = default;
 
 
 void CycleStateIntroduceBlock::onEnter() {
@@ -93,7 +91,7 @@ void CycleStateIntroduceBlock::onExit() {
 }
 
 
-void CycleStateIntroduceBlock::blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const CollectionBlock> block, bool reply) {
+void CycleStateIntroduceBlock::blockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const CollectionBlock>& block, bool reply) {
     if(reply) {
         LOG(ERROR) << "received unexpected reply";
         base_.peers_monitor_.reportViolation(peer_id);
@@ -104,8 +102,8 @@ void CycleStateIntroduceBlock::blockReceivedCallback(const peer_id_t& peer_id, s
     if(block->header.block_uid != base_.new_block_.header.block_uid) {
         LOG(INFO) << "  Ignoring block (unexpected block id " << block->header.block_uid << ")";
     } else if(processed_block_it != processed_blocks_.end() &&
-              creation_sub_block_counter.size() == 0 &&
-              transaction_sub_block_counter.size() == 0) {
+              creation_sub_block_counter.empty() &&
+              transaction_sub_block_counter.empty()) {
         LOG(INFO) << "  Ignoring block (already processed)";
     } else {
         std::chrono::time_point<std::chrono::system_clock> t0, t1, t2, t3, t4, t5;

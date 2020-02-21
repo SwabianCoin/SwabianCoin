@@ -18,7 +18,7 @@
 #define FULL_NODE_COMMON_H
 
 #include <boost/multiprecision/cpp_int.hpp>
-#include <stdint.h>
+#include <cstdint>
 #include <glog/logging.h>
 #include <chrono>
 #include "PublicKeyPEM.h"

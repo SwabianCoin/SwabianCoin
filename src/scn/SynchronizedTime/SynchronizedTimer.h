@@ -24,9 +24,9 @@ namespace scn {
     class SynchronizedTimer : public ISynchronizedTimer {
     public:
         SynchronizedTimer();
-        virtual ~SynchronizedTimer();
+        ~SynchronizedTimer() override;
 
-        virtual blockchain_time_t now() const override;
+        blockchain_time_t now() const override;
     };
 
 }

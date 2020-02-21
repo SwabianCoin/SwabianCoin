@@ -24,8 +24,8 @@ namespace scn {
 
     class EntryPointFetcher {
     public:
-        EntryPointFetcher() {};
-        virtual ~EntryPointFetcher() {};
+        EntryPointFetcher() = default;
+        virtual ~EntryPointFetcher() = default;
 
         static const std::list<std::pair<std::string, std::uint16_t>> fetch();
 

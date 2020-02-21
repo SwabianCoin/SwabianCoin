@@ -29,19 +29,19 @@ namespace scn {
 
     class CycleStateIntroduceBlock : public ICycleState {
     public:
-        CycleStateIntroduceBlock(BlockchainManager& base);
+        explicit CycleStateIntroduceBlock(BlockchainManager& base);
 
-        virtual ~CycleStateIntroduceBlock();
+        ~CycleStateIntroduceBlock() override;
 
-        virtual void onEnter() override;
+        void onEnter() override;
 
-        virtual bool onCycle() override;
+        bool onCycle() override;
 
-        virtual void onExit() override;
+        void onExit() override;
 
-        virtual void blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const CollectionBlock> block, bool reply) override;
+        void blockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const CollectionBlock>& block, bool reply) override;
 
-        virtual State getState() const override { return State::IntroduceBlock; }
+        State getState() const override { return State::IntroduceBlock; }
 
         static const blockchain_time_t time_between_propagations_ms_ = 4000;
 

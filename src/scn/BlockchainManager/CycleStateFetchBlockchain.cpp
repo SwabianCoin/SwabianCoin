@@ -27,9 +27,7 @@ CycleStateFetchBlockchain::CycleStateFetchBlockchain(BlockchainManager& base)
 }
 
 
-CycleStateFetchBlockchain::~CycleStateFetchBlockchain() {
-
-}
+CycleStateFetchBlockchain::~CycleStateFetchBlockchain() = default;
 
 
 void CycleStateFetchBlockchain::onEnter() {
@@ -70,7 +68,7 @@ void CycleStateFetchBlockchain::onExit() {
 }
 
 
-void CycleStateFetchBlockchain::blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const BaselineBlock> block, bool reply) {
+void CycleStateFetchBlockchain::blockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const BaselineBlock>& block, bool reply) {
     if(reply) {
         LOCK_MUTEX_WATCHDOG_REC(mtx_baseline_block_fetch_agent_);
         if(baseline_block_fetch_agent_) {
@@ -80,7 +78,7 @@ void CycleStateFetchBlockchain::blockReceivedCallback(const peer_id_t& peer_id, 
 }
 
 
-void CycleStateFetchBlockchain::blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const CollectionBlock> block, bool reply) {
+void CycleStateFetchBlockchain::blockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const CollectionBlock>& block, bool reply) {
     if(reply) {
         LOCK_MUTEX_WATCHDOG_REC(mtx_block_fetch_agent_map_);
         for(auto& elem : block_fetch_agent_map_) {
@@ -207,7 +205,7 @@ void CycleStateFetchBlockchain::fetchBlocksThread() {
 
         global_blockchain_newest_block_id_ = BlockchainManager::getBlockId(base_.sync_timer_.now());
 
-        if(base_.getNextBaselineBlock(next_id_to_fetch) <= global_blockchain_newest_block_id_) {
+        if(BlockchainManager::getNextBaselineBlock(next_id_to_fetch) <= global_blockchain_newest_block_id_) {
             LOG(INFO) << "Fast forward to new baseline block...";
             next_id_to_fetch = fetchBaseline();
         }

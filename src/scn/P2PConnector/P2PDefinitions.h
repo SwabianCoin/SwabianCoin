@@ -17,7 +17,7 @@
 #ifndef FULL_NODE_P2PDEFINITIONS_H
 #define FULL_NODE_P2PDEFINITIONS_H
 
-#include <stdint.h>
+#include <cstdint>
 #include <set>
 #include "scn/Common/Common.h"
 #include "scn/Common/BloomFilter.h"

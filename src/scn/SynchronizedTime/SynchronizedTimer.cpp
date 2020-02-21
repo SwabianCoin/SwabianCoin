@@ -20,14 +20,10 @@
 using namespace scn;
 
 
-SynchronizedTimer::SynchronizedTimer() {
-
-}
+SynchronizedTimer::SynchronizedTimer() = default;
 
 
-SynchronizedTimer::~SynchronizedTimer() {
-
-}
+SynchronizedTimer::~SynchronizedTimer() = default;
 
 
 blockchain_time_t SynchronizedTimer::now() const {

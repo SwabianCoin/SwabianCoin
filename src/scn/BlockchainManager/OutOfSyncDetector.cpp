@@ -30,9 +30,7 @@ OutOfSyncDetector::OutOfSyncDetector(ISynchronizedTimer& sync_timer)
 }
 
 
-OutOfSyncDetector::~OutOfSyncDetector() {
-
-}
+OutOfSyncDetector::~OutOfSyncDetector() = default;
 
 
 void OutOfSyncDetector::restartCheckCycle(Blockchain& blockchain) {

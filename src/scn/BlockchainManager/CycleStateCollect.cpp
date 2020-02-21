@@ -26,9 +26,7 @@ CycleStateCollect::CycleStateCollect(BlockchainManager& base)
 }
 
 
-CycleStateCollect::~CycleStateCollect() {
-
-}
+CycleStateCollect::~CycleStateCollect() = default;
 
 
 void CycleStateCollect::onEnter() {

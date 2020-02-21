@@ -32,15 +32,15 @@ namespace scn {
 
         virtual ~Cache();
 
-        virtual const std::shared_ptr<BaseBlock> getBlock(const block_uid_t uid) const;
+        virtual std::shared_ptr<BaseBlock> getBlock(block_uid_t uid) const;
 
         virtual block_uid_t addBlock(const BaselineBlock& block);
 
         virtual block_uid_t addBlock(const CollectionBlock& block);
 
-        virtual void resetCache(const uint64_t root_block_uid);
+        virtual void resetCache(uint64_t root_block_uid);
 
-        static const std::shared_ptr<BaseBlock> getExternalBlockFromDisk(const std::string& folder_path, const block_uid_t uid);
+        static std::shared_ptr<BaseBlock> getExternalBlockFromDisk(const std::string& folder_path, block_uid_t uid);
 
     protected:
 
@@ -48,7 +48,7 @@ namespace scn {
 
         virtual void cacheThread();
 
-        virtual const std::shared_ptr<BaseBlock> getBlockFromDisk(const block_uid_t uid) const;
+        virtual std::shared_ptr<BaseBlock> getBlockFromDisk(block_uid_t uid) const;
 
         virtual void writeBlockToDisk(const BaselineBlock& block);
 

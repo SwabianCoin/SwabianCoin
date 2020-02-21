@@ -26,12 +26,12 @@ namespace scn {
 
     class IMiner {
     public:
-        IMiner() {};
-        virtual ~IMiner() {};
+        IMiner() = default;
+        virtual ~IMiner() = default;
 
         virtual void start(const hash_t& previous_epoch_highest_hash,
                 const public_key_t& owner_public_key,
-                const epoch_t epoch,
+                epoch_t epoch,
                 std::function<void(epoch_t,const std::string&)> found_value_callback) = 0;
 
         virtual void stop() = 0;

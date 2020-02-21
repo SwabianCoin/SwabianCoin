@@ -48,7 +48,7 @@ Cache::~Cache() {
 }
 
 
-const std::shared_ptr<BaseBlock> Cache::getBlock(const block_uid_t uid) const {
+std::shared_ptr<BaseBlock> Cache::getBlock(block_uid_t uid) const {
     {
         LOCK_MUTEX_WATCHDOG(mtx_cache_access_);
         auto cached_block = cached_blocks_.find(uid);
@@ -86,7 +86,7 @@ block_uid_t Cache::addBlock(const CollectionBlock& block) {
 }
 
 
-const std::shared_ptr<BaseBlock> Cache::getBlockFromDisk(const block_uid_t uid) const {
+std::shared_ptr<BaseBlock> Cache::getBlockFromDisk(block_uid_t uid) const {
     if(uid == 0)
     {
         return nullptr;
@@ -126,7 +126,7 @@ const std::shared_ptr<BaseBlock> Cache::getBlockFromDisk(const block_uid_t uid) 
 }
 
 
-const std::shared_ptr<BaseBlock> Cache::getExternalBlockFromDisk(const std::string& folder_path, const block_uid_t uid) {
+std::shared_ptr<BaseBlock> Cache::getExternalBlockFromDisk(const std::string& folder_path, block_uid_t uid) {
     if(uid == 0)
     {
         return nullptr;

@@ -26,9 +26,7 @@ PeersMonitor::PeersMonitor(ISynchronizedTimer& sync_timer, IP2PConnector& p2p_co
 }
 
 
-PeersMonitor::~PeersMonitor() {
-
-}
+PeersMonitor::~PeersMonitor() = default;
 
 
 void PeersMonitor::blockReceivedCallback(const peer_id_t& peer_id, const CollectionBlock &block, bool reply) {

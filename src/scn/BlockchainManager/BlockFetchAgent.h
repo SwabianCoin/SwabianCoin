@@ -29,7 +29,7 @@ namespace scn {
     template<class BLOCK_TYPE>
     class BlockFetchAgent {
     public:
-        explicit BlockFetchAgent(const block_uid_t block_id, IP2PConnector& p2p_connector, ISynchronizedTimer& sync_timer, const uint32_t fetch_timeout_ms = 2000);
+        explicit BlockFetchAgent(block_uid_t block_id, IP2PConnector& p2p_connector, ISynchronizedTimer& sync_timer, uint32_t fetch_timeout_ms = 2000);
 
         virtual void onCycle();
 

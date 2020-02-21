@@ -26,9 +26,7 @@ CycleStateIntroduceBaseline::CycleStateIntroduceBaseline(BlockchainManager& base
 }
 
 
-CycleStateIntroduceBaseline::~CycleStateIntroduceBaseline() {
-
-}
+CycleStateIntroduceBaseline::~CycleStateIntroduceBaseline() = default;
 
 
 void CycleStateIntroduceBaseline::onEnter() {

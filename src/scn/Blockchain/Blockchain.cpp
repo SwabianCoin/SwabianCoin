@@ -32,9 +32,7 @@ Blockchain::Blockchain(const std::string& folder_path)
 }
 
 
-Blockchain::~Blockchain() {
-
-}
+Blockchain::~Blockchain() = default;
 
 
 void Blockchain::initEmptyChain()
@@ -71,7 +69,7 @@ void Blockchain::importBlockchain(const std::string& folder_path) {
     }
 }
 
-const std::shared_ptr<BaseBlock> Blockchain::getBlock(const block_uid_t uid) const {
+const std::shared_ptr<BaseBlock> Blockchain::getBlock(block_uid_t uid) const {
     return cache_.getBlock(uid);
 }
 

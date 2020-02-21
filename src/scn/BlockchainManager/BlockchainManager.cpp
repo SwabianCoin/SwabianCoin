@@ -21,8 +21,8 @@ using namespace scn;
 
 SynchronizedTimer BlockchainManager::static_sync_timer;
 
-BlockchainManager::BlockchainManager(public_key_t our_public_key,
-                                     private_key_t our_private_key,
+BlockchainManager::BlockchainManager(const public_key_t& our_public_key,
+                                     const private_key_t& our_private_key,
                                      Blockchain& blockchain,
                                      IP2PConnector& p2p_connector,
                                      IMiner& miner,
@@ -43,7 +43,7 @@ BlockchainManager::BlockchainManager(public_key_t our_public_key,
 , cycle_state_collect_(*this)
 , cycle_state_introduce_block_(*this)
 , cycle_state_introduce_baseline_(*this)
-, current_state_(NULL)
+, current_state_(nullptr)
 , running_(true)
 , update_state_thread_(nullptr) {
     p2p_connector_.registerBlockCallbacks(std::bind(&BlockchainManager::baselineBlockReceivedCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
@@ -60,31 +60,31 @@ BlockchainManager::~BlockchainManager() {
 }
 
 
-void BlockchainManager::baselineBlockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const BaselineBlock> block, bool reply) {
+void BlockchainManager::baselineBlockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const BaselineBlock>& block, bool reply) {
     LOCK_MUTEX_WATCHDOG_REC(mtx_current_state_access_);
-    if(current_state_ != NULL) {
+    if(current_state_ != nullptr) {
         current_state_->blockReceivedCallback(peer_id, block, reply);
     }
 
 }
 
 
-void BlockchainManager::collectionBlockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const CollectionBlock> block, bool reply) {
+void BlockchainManager::collectionBlockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const CollectionBlock>& block, bool reply) {
     LOCK_MUTEX_WATCHDOG_REC(mtx_current_state_access_);
-    if(current_state_ != NULL) {
+    if(current_state_ != nullptr) {
         current_state_->blockReceivedCallback(peer_id, block, reply);
     }
     peers_monitor_.blockReceivedCallback(peer_id, *block, reply);
 }
 
 
-void BlockchainManager::foundHashCallback(const epoch_t epoch, const std::string& data) {
+void BlockchainManager::foundHashCallback(epoch_t epoch, const std::string& data) {
     LOCK_MUTEX_WATCHDOG(mtx_found_hash_queue_access_);
     found_hash_queue_.push(data);
 }
 
 
-void BlockchainManager::triggerTransaction(const public_key_t& receiver, const uint64_t fraction) {
+void BlockchainManager::triggerTransaction(const public_key_t& receiver, uint64_t fraction) {
     LOCK_MUTEX_WATCHDOG(mtx_transaction_queue_access_);
     transaction_queue_.push(std::pair<const public_key_t,uint64_t>(receiver, fraction));
 }
@@ -112,7 +112,7 @@ uint8_t BlockchainManager::percentBlockchainSynchronized() const {
     LOCK_MUTEX_WATCHDOG_REC(mtx_current_state_access_);
     if(current_state_ == &cycle_state_fetch_blockchain_) {
         return cycle_state_fetch_blockchain_.percentSynchronizationDone();
-    } else if(current_state_ == NULL) {
+    } else if(current_state_ == nullptr) {
         return 0;
     } else {
         return 100;
@@ -127,7 +127,7 @@ uint64_t BlockchainManager::getTotalPeersEstimation() const {
 
 ICycleState::State BlockchainManager::getCurrentState() const {
     LOCK_MUTEX_WATCHDOG_REC(mtx_current_state_access_);
-    if(current_state_ == NULL) {
+    if(current_state_ == nullptr) {
         return ICycleState::State::Unassigned;
     } else {
         return current_state_->getState();
@@ -163,13 +163,13 @@ uint32_t BlockchainManager::setState(ICycleState& new_state) {
     {
         LOCK_MUTEX_WATCHDOG_REC(mtx_current_state_access_);
         if (&new_state != current_state_) {
-            if (current_state_ != NULL) {
+            if (current_state_ != nullptr) {
                 current_state_->onExit();
             }
 
             current_state_ = &new_state;
 
-            if (current_state_ != NULL) {
+            if (current_state_ != nullptr) {
                 current_state_->onEnter();
             }
         }
@@ -185,8 +185,7 @@ bool BlockchainManager::cycleUntil(blockchain_time_t target_time) {
         bool do_sleep = true;
         {
             LOCK_MUTEX_WATCHDOG_REC(mtx_current_state_access_);
-            if (current_state_ != NULL) {
-                do_sleep = !current_state_->onCycle();
+            if (current_state_ != nullptr) {
             }
         }
 
@@ -252,9 +251,9 @@ void BlockchainManager::updateStateThread() {
 
     {
         LOCK_MUTEX_WATCHDOG_REC(mtx_current_state_access_);
-        if(current_state_ != NULL) {
+        if(current_state_ != nullptr) {
             current_state_->onExit();
-            current_state_ = NULL;
+            current_state_ = nullptr;
         }
     }
 }
@@ -266,7 +265,7 @@ void BlockchainManager::fetchBlockchain() {
         bool do_sleep = true;
         {
             LOCK_MUTEX_WATCHDOG_REC(mtx_current_state_access_);
-            if(current_state_ != NULL) {
+            if(current_state_ != nullptr) {
                 do_sleep = !current_state_->onCycle();
             }
         }
