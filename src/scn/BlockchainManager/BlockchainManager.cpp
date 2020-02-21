@@ -186,6 +186,7 @@ bool BlockchainManager::cycleUntil(blockchain_time_t target_time) {
         {
             LOCK_MUTEX_WATCHDOG_REC(mtx_current_state_access_);
             if (current_state_ != nullptr) {
+                do_sleep = !current_state_->onCycle();
             }
         }
 

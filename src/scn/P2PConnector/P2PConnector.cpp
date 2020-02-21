@@ -95,7 +95,14 @@ P2PConnector::P2PConnector(uint16_t port, const Blockchain& blockchain)
 }
 
 
-P2PConnector::~P2PConnector() = default;
+P2PConnector::~P2PConnector() {
+    libtorrent::setFcoinConnector(nullptr);
+    running_ = false;
+    alert_thread_->join();
+    if (send_baseline_thread_ && send_baseline_thread_->joinable()) {
+        send_baseline_thread_->join();
+    }
+}
 
 
 void P2PConnector::connect() {
