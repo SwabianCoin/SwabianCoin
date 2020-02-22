@@ -34,6 +34,38 @@ int main(int argc, char* argv[]) {
     return startCommandLineApp(argc, argv);
 }
 
+#ifdef _WIN32
+enum class ConsoleColor : WORD
+{
+    WHITE = 0x07,
+    GREEN = 0x02,
+    YELLOW = 0x0e,
+    RED = 0x0c
+};
+HANDLE h_console = GetStdHandle(STD_OUTPUT_HANDLE);
+template <class T>
+void printColored(const T& content, ConsoleColor color)
+{
+    CONSOLE_SCREEN_BUFFER_INFO con_info;
+    GetConsoleScreenBufferInfo(h_console, &con_info);
+    SetConsoleTextAttribute(h_console, static_cast<WORD>(color));
+    std::cout << content;
+    SetConsoleTextAttribute(h_console, con_info.wAttributes);
+}
+#else
+enum class ConsoleColor : uint32_t
+{
+    WHITE = 37,
+    GREEN = 32,
+    YELLOW = 33,
+    RED = 31
+};
+template <class T>
+void printColored(const T& content, ConsoleColor color)
+{
+    std::cout << "\033[1;" << static_cast<uint32_t>(color) << "m" << content << "\033[0m";
+}
+#endif
 
 int startCommandLineApp(int argc, char* argv[]) {
     if (argc < 5) {
@@ -92,7 +124,10 @@ int startCommandLineApp(int argc, char* argv[]) {
                 uint32_t num_worker_threads;
                 std::cin >> num_worker_threads;
                 miner.changeNumWorkerThreads(num_worker_threads);
-                std::cout << "Miner: " << (miner.isRunning() ? "\033[1;" + std::string(num_worker_threads == 0 ? "33" : "32") + "mrunning (" + std::to_string(num_worker_threads) + ")\033[0m" : "\033[1;31mnot running\033[0m") << std::endl << std::endl;
+                ConsoleColor c = miner.isRunning() ? (num_worker_threads > 0 ? ConsoleColor::GREEN : ConsoleColor::YELLOW) : ConsoleColor::RED;
+                std::cout << "Miner: ";
+                miner.isRunning() ? printColored("running (threads: " + std::to_string(num_worker_threads) + ")", c) : printColored("not running", c);
+                std::cout << std::endl << std::endl;
                 break;
             }
             case 's':
@@ -103,14 +138,18 @@ int startCommandLineApp(int argc, char* argv[]) {
                 auto percent_synchronized = manager.percentBlockchainSynchronized();
                 auto num_worker_threads = miner.numWorkerThreads();
                 auto cps = miner.numChecksPerSecond();
+                ConsoleColor miner_c = miner.isRunning() ? (num_worker_threads > 0 ? ConsoleColor::GREEN : ConsoleColor::YELLOW) : ConsoleColor::RED;
                 std::cout << "Newest Block Index: " << block->header.block_uid << std::endl <<
-                          "Newest Block Hash: " << scn::hash_helper::toString(block->header.generic_header.block_hash) << std::endl <<
-                          "Balance: " << std::fixed << std::setprecision(6) << static_cast<double>(blockchain.getBalance(public_key)) /
-                          static_cast<double>(scn::TransactionSubBlock::fraction_per_coin) << std::endl <<
-                          "Peers: " << (num_peers>0 ? "\033[1;32m" : "\033[1;31m") << num_peers << "\033[0m" << "\t\t" <<
-                          "Miner: " << (miner.isRunning() ? "\033[1;" + std::string(num_worker_threads == 0 ? "33" : "32") + "mrunning (threads: " + std::to_string(num_worker_threads) + " cps: " + std::to_string(cps) + ")\033[0m" : "\033[1;31mnot running\033[0m") << "\t" <<
-                          "Blockchain: " << (percent_synchronized == 100 ? "\033[1;32msynchronized" : "\033[1;33msynchronizing") << " (" << (uint32_t)percent_synchronized << "%)\033[0m" << std::endl <<
-                          "Epoch: " << mining_state.epoch << "\t\tCoins in circulation: " << (mining_state.num_minings_in_epoch + mining_state.epoch * scn::CollectionBlock::max_num_creations) << std::endl << std::endl;
+                    "Newest Block Hash: " << scn::hash_helper::toString(block->header.generic_header.block_hash) << std::endl <<
+                    "Balance: " << std::fixed << std::setprecision(6) << static_cast<double>(blockchain.getBalance(public_key)) /
+                    static_cast<double>(scn::TransactionSubBlock::fraction_per_coin) << std::endl <<
+                    "Peers: ";
+                printColored(num_peers, num_peers > 0 ? ConsoleColor::GREEN : ConsoleColor::YELLOW);
+                std::cout << "\t\t" << "Miner: ";
+                miner.isRunning() ? printColored("running (threads: " + std::to_string(num_worker_threads) + " cps: " + std::to_string(cps) + ")", miner_c) : printColored("not running", miner_c);
+                std::cout << "\t" << "Blockchain: ";
+                percent_synchronized == 100 ? printColored("synchronized", ConsoleColor::GREEN) : printColored("synchronizing (" + std::to_string(percent_synchronized) + "%)", ConsoleColor::YELLOW);
+                std::cout << std::endl << "Epoch: " << mining_state.epoch << "\t\tCoins in circulation: " << (mining_state.num_minings_in_epoch + mining_state.epoch * scn::CollectionBlock::max_num_creations) << std::endl << std::endl;
                 break;
             }
             case 'p':
