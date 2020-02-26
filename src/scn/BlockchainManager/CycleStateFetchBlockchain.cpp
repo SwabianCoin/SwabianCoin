@@ -68,7 +68,7 @@ void CycleStateFetchBlockchain::onExit() {
 }
 
 
-void CycleStateFetchBlockchain::blockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const BaselineBlock>& block, bool reply) {
+void CycleStateFetchBlockchain::blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const BaselineBlock> block, bool reply) {
     if(reply) {
         LOCK_MUTEX_WATCHDOG_REC(mtx_baseline_block_fetch_agent_);
         if(baseline_block_fetch_agent_) {
@@ -78,7 +78,7 @@ void CycleStateFetchBlockchain::blockReceivedCallback(const peer_id_t& peer_id, 
 }
 
 
-void CycleStateFetchBlockchain::blockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const CollectionBlock>& block, bool reply) {
+void CycleStateFetchBlockchain::blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const CollectionBlock> block, bool reply) {
     if(reply) {
         LOCK_MUTEX_WATCHDOG_REC(mtx_block_fetch_agent_map_);
         for(auto& elem : block_fetch_agent_map_) {

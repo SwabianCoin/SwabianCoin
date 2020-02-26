@@ -91,7 +91,7 @@ void CycleStateIntroduceBlock::onExit() {
 }
 
 
-void CycleStateIntroduceBlock::blockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const CollectionBlock>& block, bool reply) {
+void CycleStateIntroduceBlock::blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const CollectionBlock> block, bool reply) {
     if(reply) {
         LOG(ERROR) << "received unexpected reply";
         base_.peers_monitor_.reportViolation(peer_id);
