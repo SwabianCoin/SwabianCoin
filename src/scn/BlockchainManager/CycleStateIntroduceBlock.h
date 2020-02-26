@@ -39,7 +39,7 @@ namespace scn {
 
         void onExit() override;
 
-        void blockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const CollectionBlock>& block, bool reply) override;
+        void blockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const CollectionBlock> block, bool reply) override;
 
         State getState() const override { return State::IntroduceBlock; }
 

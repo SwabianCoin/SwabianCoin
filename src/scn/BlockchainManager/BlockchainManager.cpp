@@ -69,7 +69,7 @@ void BlockchainManager::baselineBlockReceivedCallback(const peer_id_t& peer_id, 
 }
 
 
-void BlockchainManager::collectionBlockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const CollectionBlock>& block, bool reply) {
+void BlockchainManager::collectionBlockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const CollectionBlock> block, bool reply) {
     LOCK_MUTEX_WATCHDOG_REC(mtx_current_state_access_);
     if(current_state_ != nullptr) {
         current_state_->blockReceivedCallback(peer_id, block, reply);
