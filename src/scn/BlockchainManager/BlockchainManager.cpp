@@ -60,7 +60,7 @@ BlockchainManager::~BlockchainManager() {
 }
 
 
-void BlockchainManager::baselineBlockReceivedCallback(const peer_id_t& peer_id, const std::shared_ptr<const BaselineBlock>& block, bool reply) {
+void BlockchainManager::baselineBlockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const BaselineBlock> block, bool reply) {
     LOCK_MUTEX_WATCHDOG_REC(mtx_current_state_access_);
     if(current_state_ != nullptr) {
         current_state_->blockReceivedCallback(peer_id, block, reply);
