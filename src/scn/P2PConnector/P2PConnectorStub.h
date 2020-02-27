@@ -39,6 +39,8 @@ namespace scn {
         ,propagate_collection_block_counter_(0)
         ,propagate_active_peers_list_counter_(0)
         ,ask_for_block_uid_(0)
+        ,ban_peer_counter_(0)
+        ,last_banned_peer_id_("")
         ,remote_blockchain_(nullptr) {
         };
 
@@ -108,7 +110,8 @@ namespace scn {
         }
 
         virtual void banPeer(const peer_id_t& peer_to_ban) {
-            //do nothing
+            ban_peer_counter_++;
+            last_banned_peer_id_ = peer_to_ban;
         }
 
         virtual void setRemoteBlockchain(const peer_id_t remote_peer, std::shared_ptr<Blockchain> remote_blockchain) {
@@ -131,6 +134,9 @@ namespace scn {
         uint32_t propagate_collection_block_counter_;
         uint32_t propagate_active_peers_list_counter_;
         block_uid_t ask_for_block_uid_;
+
+        uint32_t ban_peer_counter_;
+        peer_id_t last_banned_peer_id_;
 
         std::shared_ptr<Blockchain> remote_blockchain_;
         peer_id_t remote_peer_;

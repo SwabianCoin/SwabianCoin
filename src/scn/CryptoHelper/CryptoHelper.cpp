@@ -55,7 +55,7 @@ hash_t CryptoHelper::calcHash(std::stringstream& data) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
-    char buffer[1024*1024];
+    char buffer[512*1024];
     while(!data.eof()) {
         data.read(buffer, sizeof(buffer));
         auto bytes_read = data.gcount();

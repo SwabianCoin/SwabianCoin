@@ -40,18 +40,6 @@ That's it for the executable. If you need unit tests, go on with the next step
 
 ### Unit Tests
 
-#### **\[Ubuntu 18.04\]** Install GTest
-
-```
-sudo apt-get install libgtest-dev
-cd /usr/src/gtest
-sudo cmake CMakeLists.txt
-sudo make
-sudo make install
-```
-
-#### Build and Run Tests
-
 Starting from the build directory of chapter [Build](#build):
 ```
 cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIT_TESTS=ON ..

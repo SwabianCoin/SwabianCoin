@@ -97,18 +97,19 @@ endif()
 target_compile_definitions(full_node_cli PRIVATE CEREAL_SERIALIZE_FUNCTION_NAME=ser)
 
 if(BUILD_UNIT_TESTS)
-    find_package(GTest REQUIRED)
-    include_directories(${GTEST_INCLUDE_DIRS})
+    set(INSTALL_GTEST OFF)
+    add_subdirectory(dep/googletest-release-1.10.0)
     add_executable(runTests
             test/TestCrypto.cpp
             test/TestSerialization.cpp
             test/TestBlockchainManager.cpp
+            test/TestPeersMonitor.cpp
             test/TestMiner.cpp
             test/TestBlockchain.cpp
             test/TestP2PConnector.cpp
             test/TestBloomFilter.cpp
             )
-    target_link_libraries(runTests full_node_library ${GTEST_LIBRARIES} pthread)
+    target_link_libraries(runTests full_node_library ${GTEST_LIBRARIES} gtest)
     target_compile_definitions(runTests PRIVATE CEREAL_SERIALIZE_FUNCTION_NAME=ser)
 endif()
 

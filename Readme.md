@@ -56,8 +56,8 @@ Note: Be careful with your private key since this key represents your wallet. Ta
 
 The easiest way is to download and use precompiled debian packages:
 ```
-wget https://github.com/SwabianCoin/SwabianCoin/releases/download/v20.02.02/swabiancoin_20.02.2-1_amd64.deb
-sudo apt update && sudo apt install ./swabiancoin_20.02.2-1_amd64.deb
+wget https://github.com/SwabianCoin/SwabianCoin/releases/download/v20.02.03/swabiancoin_20.02.3-1_amd64.deb
+sudo apt update && sudo apt install ./swabiancoin_20.02.3-1_amd64.deb
 ```
 
 ### Starting a node

@@ -42,8 +42,8 @@ void PeersMonitor::blockReceivedCallback(const peer_id_t& peer_id, const Collect
         if ((history_list.size() == message_history_size_) && (history_list.back() - history_list.front() <
                                                                (min_allowed_avg_time_between_propagations_ms_ *
                                                                 (message_history_size_ - 1)))) {
-            history_list.clear();
             LOG(INFO) << "Peer is sending messages faster than allowed: " << history_list.front() << " " << history_list.back() << " " << history_list.size();
+            history_list.clear();
             reportViolation(peer_id);
         }
     }

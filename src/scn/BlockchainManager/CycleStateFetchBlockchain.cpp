@@ -151,7 +151,7 @@ block_uid_t CycleStateFetchBlockchain::fetchBaseline() {
 
         global_blockchain_newest_block_id_ = BlockchainManager::getBlockId(base_.sync_timer_.now());
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     {
         LOCK_MUTEX_WATCHDOG_REC(mtx_baseline_block_fetch_agent_);
@@ -193,7 +193,7 @@ void CycleStateFetchBlockchain::processFinishedAgents() {
 
 void CycleStateFetchBlockchain::fetchBlocksThread() {
     while(running_ && base_.p2p_connector_.numConnectedPeers() == 0) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     auto next_id_to_fetch = fetchBaseline();

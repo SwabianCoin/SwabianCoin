@@ -20,6 +20,10 @@
 #include <chrono>
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/json.hpp>
+#include <boost/random.hpp>
+using namespace boost::random;
+
+typedef independent_bits_engine<mt19937, 256, scn::hash_t> generator_hash_type;
 
 using namespace scn;
 
@@ -127,16 +131,9 @@ std::vector<scn::public_key_t> example_pub_keys = {PublicKeyPEM("-----BEGIN PUBL
                                                      "+pGvb1hHNYNRtrBdZUUCpwaoTUlbbC1lae7I44j+UAfSdZR4B6IqgA==\n"
                                                      "-----END PUBLIC KEY-----")};
 
-hash_t generateRandomHash() {
-    hash_t hash = rand() * rand() % std::numeric_limits<uint64_t>::max();
-    hash *= std::numeric_limits<uint64_t>::max();
-    hash *= std::numeric_limits<uint64_t>::max();
-    hash *= std::numeric_limits<uint64_t>::max();
-    return hash;
-}
-
 TEST(TestSerialization, BaselineBlockHashHuge) {
-    std::srand(1234);
+    generator_hash_type random_hash_generator;
+    random_hash_generator.seed(1234);
     std::chrono::time_point<std::chrono::system_clock> t1, t2, t3;
     t1 = std::chrono::system_clock::now();
     BaselineBlock block;
@@ -155,7 +152,7 @@ TEST(TestSerialization, BaselineBlockHashHuge) {
     for(uint32_t epoch=0;epoch<coins_total/1000;epoch++) {
         block.data_value_hashes[epoch].reserve(1000);
         for(uint32_t creation=0;creation<1000;creation++) {
-            block.data_value_hashes[epoch].push_back(generateRandomHash());
+            block.data_value_hashes[epoch].push_back(random_hash_generator());
         }
     }
     t2 = std::chrono::system_clock::now();
@@ -165,7 +162,7 @@ TEST(TestSerialization, BaselineBlockHashHuge) {
     t3 = std::chrono::system_clock::now();
     std::cout << "Generate Data: " << (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1)).count() << "ms" << std::endl
               << "Fill Hash: " << (std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2)).count() << "ms" << std::endl;
-    EXPECT_EQ(hash_helper::toString(block.header.generic_header.block_hash), "BCE609969E259DBA1318A1E6263F4F2872FEB9E11F2C2D37F3E20E4C501C7BB2");
+    EXPECT_EQ(hash_helper::toString(block.header.generic_header.block_hash), "2736D50FDDC976E766CD1E389E1047E2F7DC6E9448C91CDE045E39371FE272C0");
 }
 
 int main(int argc, char **argv) {
