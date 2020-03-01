@@ -116,14 +116,20 @@ if(BUILD_UNIT_TESTS)
     if(UNIT_TEST_COVERAGE)
         include(cmake/CodeCoverage.cmake)
         append_coverage_compiler_flags()
+        setup_target_for_coverage_lcov(
+                NAME runTests-coverage-lcov
+                EXECUTABLE runTests --gtest_output=xml:test_results.xml
+                DEPENDENCIES runTests
+                EXCLUDE "${PROJECT_SOURCE_DIR}/dep/*" "${PROJECT_SOURCE_DIR}/test/*" "${PROJECT_SOURCE_DIR}/main.cpp" "/usr/include/*"
+        )
         setup_target_for_coverage_gcovr_xml(
-                NAME runTests-coverage-xml
+                NAME runTests-coverage-gcovr-xml
                 EXECUTABLE runTests --gtest_output=xml:test_results.xml
                 DEPENDENCIES runTests
                 EXCLUDE "${PROJECT_SOURCE_DIR}/dep/*" "${PROJECT_SOURCE_DIR}/test/*"
         )
         setup_target_for_coverage_gcovr_html(
-                NAME runTests-coverage-html
+                NAME runTests-coverage-gcovr-html
                 EXECUTABLE runTests --gtest_output=xml:test_results.xml
                 DEPENDENCIES runTests
                 EXCLUDE "${PROJECT_SOURCE_DIR}/dep/*" "${PROJECT_SOURCE_DIR}/test/*"
