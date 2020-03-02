@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(full_node)
 
 option(BUILD_UNIT_TESTS "build unit tests" OFF)
+option(UNIT_TEST_COVERAGE "create unit test code coverage report" OFF)
 
 set(CMAKE_CXX_STANDARD 14)
 if(MSVC)
@@ -111,6 +112,23 @@ if(BUILD_UNIT_TESTS)
             )
     target_link_libraries(runTests full_node_library ${GTEST_LIBRARIES} gtest)
     target_compile_definitions(runTests PRIVATE CEREAL_SERIALIZE_FUNCTION_NAME=ser)
+
+    if(UNIT_TEST_COVERAGE)
+        include(cmake/CodeCoverage.cmake)
+        append_coverage_compiler_flags()
+        setup_target_for_coverage_gcovr_xml(
+                NAME runTests-coverage-xml
+                EXECUTABLE runTests --gtest_output=xml:test_results.xml
+                DEPENDENCIES runTests
+                EXCLUDE "${PROJECT_SOURCE_DIR}/dep/*" "${PROJECT_SOURCE_DIR}/test/*"
+        )
+        setup_target_for_coverage_gcovr_html(
+                NAME runTests-coverage-html
+                EXECUTABLE runTests --gtest_output=xml:test_results.xml
+                DEPENDENCIES runTests
+                EXCLUDE "${PROJECT_SOURCE_DIR}/dep/*" "${PROJECT_SOURCE_DIR}/test/*"
+        )
+    endif()
 endif()
 
 install(TARGETS full_node_cli DESTINATION bin)
