@@ -22,7 +22,7 @@ using namespace scn;
 class TestCrypto : public testing::Test {
 public:
     TestCrypto()
-            :crypto_(example_owner_public_key_, example_owner_private_key_) { }
+            :crypto_(example_owner_private_key_) { }
 
 protected:
 
@@ -55,6 +55,12 @@ TEST_F(TestCrypto, HashCalculationShortStream) {
     std::stringstream ss;
     ss << "A random text.";
     auto hash = CryptoHelper::calcHash(ss);
+    EXPECT_EQ(hash_helper::toString(hash), "1FF38799705BD4B5CEAA66EE3DEC54A304E16B64A1711838730EFF6752F2BA6");
+}
+
+TEST_F(TestCrypto, HashCalculationShortBuffer) {
+    const char* buffer = "A random text.";
+    auto hash = CryptoHelper::calcHash(buffer, strlen(buffer));
     EXPECT_EQ(hash_helper::toString(hash), "1FF38799705BD4B5CEAA66EE3DEC54A304E16B64A1711838730EFF6752F2BA6");
 }
 
@@ -99,4 +105,20 @@ TEST_F(TestCrypto, SignatureCalculationInvalid3) {
     auto signature = crypto_.calcSignature("A random text.");
     signature[7]++;
     EXPECT_EQ(crypto_.verifySignature("A random text.", signature, example_owner_public_key_), false);
+}
+
+TEST_F(TestCrypto, InvalidPrivateKey) {
+    CryptoHelper crypto_local("ABC");
+    auto signature = crypto_local.calcSignature("A random text.");
+    EXPECT_TRUE(signature.empty());
+}
+
+TEST_F(TestCrypto, IsPublicKeyValid) {
+    EXPECT_TRUE(CryptoHelper::isPublicKeyValid(example_owner_public_key_));
+    EXPECT_FALSE(CryptoHelper::isPublicKeyValid(PublicKeyPEM()));
+}
+
+TEST_F(TestCrypto, IsPrivateKeyValid) {
+    EXPECT_TRUE(CryptoHelper::isPrivateKeyValid(example_owner_private_key_));
+    EXPECT_FALSE(CryptoHelper::isPrivateKeyValid("ABC"));
 }

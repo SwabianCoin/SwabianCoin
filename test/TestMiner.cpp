@@ -82,3 +82,11 @@ TEST_F(TestMiner, checksPerSecond) {
     std::cout << "Number of checks per second: " << num_checks_per_second << std::endl;
     EXPECT_GT(num_checks_per_second, 0);
 }
+
+TEST_F(TestMiner, changeNumMiningThreads) {
+    startMining(1);
+    EXPECT_EQ(miner_local->numWorkerThreads(), 1);
+    miner_local->changeNumWorkerThreads(3);
+    EXPECT_EQ(miner_local->numWorkerThreads(), 3);
+    stopMining();
+}

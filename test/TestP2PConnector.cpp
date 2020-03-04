@@ -16,7 +16,8 @@
 
 #include "scn/Blockchain/Blockchain.h"
 #include "scn/P2PConnector/P2PConnector.h"
-#include "PeerStub.h"
+#include "stubs/PeerStub.h"
+#include "stubs/EntryPointFetcherStub.h"
 #include <gtest/gtest.h>
 
 using namespace scn;
@@ -26,13 +27,24 @@ class TestP2PConnector : public testing::Test {
 public:
     TestP2PConnector()
     :blockchain_("./blockchain_test/")
-    ,p2p_connector_(13386, blockchain_)
+    ,dummy_entry_point_fetcher_()
+    ,p2p_connector_(13386, blockchain_, dummy_entry_point_fetcher_)
     ,last_received_baseline_block(nullptr)
     ,last_received_collection_block(nullptr) {
+        p2p_connector_.getTorrentSession()->pause(); //avoid external connections
+
+        auto root_block = blockchain_.getRootBlock();
+        CollectionBlock block;
+        block.header.block_uid = root_block->header.block_uid + 1;
+        block.header.generic_header.previous_block_hash = root_block->header.generic_header.block_hash;
+        CryptoHelper::fillHash(block);
+        blockchain_.addBlock(block);
+
         p2p_connector_.registerBlockCallbacks(std::bind(&TestP2PConnector::baselineBlockReceivedCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
                                               std::bind(&TestP2PConnector::collectionBlockReceivedCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
         p2p_connector_.registerActivePeersCallback(std::bind(&TestP2PConnector::activePeersListReceivedCallback, this, std::placeholders::_1, std::placeholders::_2));
         p2p_connector_.connect();
+        p2p_connector_.registerPeer(dummy_peer_);
     }
 
     void createSimpleBaselineBlock(BaselineBlock& block, std::string& serialized_block) {
@@ -103,6 +115,7 @@ protected:
 
     PeerStub dummy_peer_;
     Blockchain blockchain_;
+    EntryPointFetcherStub dummy_entry_point_fetcher_;
     P2PConnector p2p_connector_;
 
     std::shared_ptr<const BaselineBlock> last_received_baseline_block;
@@ -344,4 +357,108 @@ TEST_F(TestP2PConnector, receiveInvalidActivePeersMessage) {
 
     //check if p2p connector passed message to observer
     EXPECT_EQ(last_received_active_peers_list, nullptr);
+}
+
+TEST_F(TestP2PConnector, incomingAskForLastBaselineBlock) {
+    std::stringstream oss;
+    cereal::PortableBinaryOutputArchive oa(oss);
+    oa << (uint16_t)1; //protocol version
+    oa << (uint8_t)6; //AskForLastBaselineBlock
+
+    EXPECT_EQ(dummy_peer_.send_message_counter_, 0);
+
+    p2p_connector_.receivedMessage(dummy_peer_, oss.str());
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+    EXPECT_EQ(dummy_peer_.send_message_counter_, 1);
+}
+
+TEST_F(TestP2PConnector, incomingAskForBlock1) {
+    std::stringstream oss;
+    cereal::PortableBinaryOutputArchive oa(oss);
+    oa << (uint16_t)1; //protocol version
+    oa << (uint8_t)5; //AskForBlock
+    oa << blockchain_.getNewestBlockId();
+
+    EXPECT_EQ(dummy_peer_.send_message_counter_, 0);
+
+    p2p_connector_.receivedMessage(dummy_peer_, oss.str());
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+    EXPECT_EQ(dummy_peer_.send_message_counter_, 1);
+}
+
+TEST_F(TestP2PConnector, incomingAskForBlock2) {
+    std::stringstream oss;
+    cereal::PortableBinaryOutputArchive oa(oss);
+    oa << (uint16_t)1; //protocol version
+    oa << (uint8_t)5; //AskForBlock
+    oa << blockchain_.getRootBlockId();
+
+    EXPECT_EQ(dummy_peer_.send_message_counter_, 0);
+
+    p2p_connector_.receivedMessage(dummy_peer_, oss.str());
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+    EXPECT_EQ(dummy_peer_.send_message_counter_, 1);
+}
+
+TEST_F(TestP2PConnector, numConnectedPeers) {
+    EXPECT_EQ(p2p_connector_.numConnectedPeers(), 1);
+
+    PeerStub dummy_peer2;
+    dummy_peer2.id_ = "DP2";
+    p2p_connector_.registerPeer(dummy_peer2);
+
+    EXPECT_EQ(p2p_connector_.numConnectedPeers(), 2);
+
+    p2p_connector_.unregisterPeer(dummy_peer_);
+
+    EXPECT_EQ(p2p_connector_.numConnectedPeers(), 1);
+
+    p2p_connector_.unregisterPeer(dummy_peer2);
+
+    EXPECT_EQ(p2p_connector_.numConnectedPeers(), 0);
+}
+
+TEST_F(TestP2PConnector, outgoingAskForLastBaselineBlock) {
+    EXPECT_EQ(dummy_peer_.send_message_counter_, 0);
+    p2p_connector_.askForLastBaselineBlock();
+    EXPECT_EQ(dummy_peer_.send_message_counter_, 1);
+}
+
+TEST_F(TestP2PConnector, outgoingAskForBlock) {
+    EXPECT_EQ(dummy_peer_.send_message_counter_, 0);
+    p2p_connector_.askForBlock(42);
+    EXPECT_EQ(dummy_peer_.send_message_counter_, 1);
+}
+
+TEST_F(TestP2PConnector, propagateBlock1) {
+    EXPECT_EQ(dummy_peer_.send_message_counter_, 0);
+    BaselineBlock block;
+    p2p_connector_.propagateBlock(block);
+    EXPECT_EQ(dummy_peer_.send_message_counter_, 1);
+}
+
+TEST_F(TestP2PConnector, propagateBlock2) {
+    EXPECT_EQ(dummy_peer_.send_message_counter_, 0);
+    CollectionBlock block;
+    p2p_connector_.propagateBlock(block);
+    EXPECT_EQ(dummy_peer_.send_message_counter_, 1);
+}
+
+TEST_F(TestP2PConnector, propagateActivePeersList) {
+    EXPECT_EQ(dummy_peer_.send_message_counter_, 0);
+    ActivePeersList active_peers_list;
+    p2p_connector_.propagateActivePeersList(active_peers_list);
+    EXPECT_EQ(dummy_peer_.send_message_counter_, 1);
+}
+
+TEST_F(TestP2PConnector, banPeer) {
+    EXPECT_EQ(dummy_peer_.ban_counter_, 0);
+    p2p_connector_.banPeer(dummy_peer_.id_);
+    EXPECT_EQ(dummy_peer_.ban_counter_, 1);
 }

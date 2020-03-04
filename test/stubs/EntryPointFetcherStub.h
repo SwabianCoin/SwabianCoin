@@ -14,27 +14,30 @@
  * along with SwabianCoin.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef FULL_NODE_ENTRYPOINTFETCHER_H
-#define FULL_NODE_ENTRYPOINTFETCHER_H
+#ifndef FULL_NODE_ENTRYPOINTFETCHERSTUB_H
+#define FULL_NODE_ENTRYPOINTFETCHERSTUB_H
 
-#include "IEntryPointFetcher.h"
+#include "scn/P2PConnector/IEntryPointFetcher.h"
 
 namespace scn {
 
-    class EntryPointFetcher : public IEntryPointFetcher {
+    class EntryPointFetcherStub : public IEntryPointFetcher {
     public:
-        EntryPointFetcher() = default;
-        virtual ~EntryPointFetcher() = default;
+        EntryPointFetcherStub()
+        :num_calls_fetch_(0)
+        ,entry_point_list_() {}
 
-        const std::list<std::pair<std::string, std::uint16_t>> fetch() override;
+        virtual ~EntryPointFetcherStub() = default;
 
-    protected:
-        static const std::string entry_points_host_;
-        static const std::string entry_points_path_;
-        static const std::string ca_cert_path_;
-        static const std::list<std::pair<std::string, std::uint16_t>> entry_points_fallback_;
+        const std::list<std::pair<std::string, std::uint16_t>> fetch() override {
+            num_calls_fetch_++;
+            return entry_point_list_;
+        }
+
+        uint32_t num_calls_fetch_;
+        std::list<std::pair<std::string, std::uint16_t>> entry_point_list_;
     };
 
 }
 
-#endif //FULL_NODE_ENTRYPOINTFETCHER_H
+#endif //FULL_NODE_ENTRYPOINTFETCHERSTUB_H

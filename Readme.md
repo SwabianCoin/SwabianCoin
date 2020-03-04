@@ -4,6 +4,8 @@
 
 ![Online Status](https://img.shields.io/endpoint?url=https%3A%2F%2Fwww.swabiancoin.com%2Fbadge_online_status.json)&nbsp;&nbsp;&nbsp;&nbsp;![Mine Status](https://img.shields.io/endpoint?url=https%3A%2F%2Fwww.swabiancoin.com%2Fbadge_mine_status.json)&nbsp;&nbsp;&nbsp;&nbsp;![Coins per Day](https://img.shields.io/endpoint?url=https%3A%2F%2Fwww.swabiancoin.com%2Fbadge_coins_per_day_status.json)&nbsp;&nbsp;&nbsp;&nbsp;![Users](https://img.shields.io/endpoint?url=https%3A%2F%2Fwww.swabiancoin.com%2Fbadge_users_status.json)&nbsp;&nbsp;&nbsp;&nbsp;[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
+[![Build Status](https://travis-ci.com/SwabianCoin/SwabianCoin.svg?branch=master)](https://travis-ci.com/SwabianCoin/SwabianCoin)&nbsp;&nbsp;&nbsp;&nbsp;[![codecov](https://codecov.io/gh/SwabianCoin/SwabianCoin/branch/master/graph/badge.svg)](https://codecov.io/gh/SwabianCoin/SwabianCoin)
+
 ## Table of Contents
 
  - [Key Features](#key-features)
@@ -56,8 +58,8 @@ Note: Be careful with your private key since this key represents your wallet. Ta
 
 The easiest way is to download and use precompiled debian packages:
 ```
-wget https://github.com/SwabianCoin/SwabianCoin/releases/download/v20.02.03/swabiancoin_20.02.3-1_amd64.deb
-sudo apt update && sudo apt install ./swabiancoin_20.02.3-1_amd64.deb
+wget https://github.com/SwabianCoin/SwabianCoin/releases/download/v20.03.00/swabiancoin_20.03.0-1_amd64.deb
+sudo apt update && sudo apt install ./swabiancoin_20.03.0-1_amd64.deb
 ```
 
 ### Starting a node

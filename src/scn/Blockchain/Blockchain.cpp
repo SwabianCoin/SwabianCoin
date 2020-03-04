@@ -749,13 +749,13 @@ std::ostream& scn::operator<<(std::ostream& os, const Blockchain& blockchain) {
             default:
             {
                 auto block = std::static_pointer_cast<scn::BaselineBlock>(baseblock);
-                os << block << std::endl;
+                os << *block << std::endl;
                 break;
             }
             case BlockType::CollectionBlock:
             {
                 auto block = std::static_pointer_cast<scn::CollectionBlock>(baseblock);
-                os << block << std::endl;
+                os << *block << std::endl;
                 break;
             }
         }

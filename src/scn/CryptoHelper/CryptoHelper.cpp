@@ -27,18 +27,14 @@
 
 using namespace scn;
 
-CryptoHelper::CryptoHelper(const public_key_t& public_key, const private_key_t& private_key) {
-    public_ec_ = createPublicEC(public_key);
+CryptoHelper::CryptoHelper(const private_key_t& private_key) {
     private_ec_ = createPrivateEC(private_key);
-    if(public_ec_ == nullptr) {
-        LOG(ERROR) << "Public key invalid!";
-    } else if(private_ec_ == nullptr) {
+    if(private_ec_ == nullptr) {
         LOG(ERROR) << "Private key invalid!";
     }
 }
 
 CryptoHelper::~CryptoHelper() {
-    EC_KEY_free(public_ec_);
     EC_KEY_free(private_ec_);
 }
 

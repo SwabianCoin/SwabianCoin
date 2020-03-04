@@ -19,7 +19,7 @@
 
 using namespace scn;
 
-SynchronizedTimer BlockchainManager::static_sync_timer;
+SynchronizedTimer BlockchainManager::static_sync_timer_;
 
 BlockchainManager::BlockchainManager(const public_key_t& our_public_key,
                                      const private_key_t& our_private_key,
@@ -31,7 +31,7 @@ BlockchainManager::BlockchainManager(const public_key_t& our_public_key,
 : our_public_key_(our_public_key)
 , our_private_key_(our_private_key)
 , sync_timer_(sync_timer)
-, crypto_(our_public_key, our_private_key)
+, crypto_(our_private_key)
 , blockchain_(blockchain)
 , p2p_connector_(p2p_connector)
 , miner_(miner)
@@ -55,6 +55,7 @@ BlockchainManager::BlockchainManager(const public_key_t& our_public_key,
 
 
 BlockchainManager::~BlockchainManager() {
+    p2p_connector_.disconnect();
     running_ = false;
     update_state_thread_->join();
 }

@@ -48,7 +48,7 @@ namespace scn {
                 IP2PConnector& p2p_connector,
                 IMiner& miner,
                 bool initial_fetch = true,
-                ISynchronizedTimer& sync_timer = static_sync_timer);
+                ISynchronizedTimer& sync_timer = static_sync_timer_);
         virtual ~BlockchainManager();
 
         virtual void baselineBlockReceivedCallback(const peer_id_t& peer_id, std::shared_ptr<const BaselineBlock> block, bool reply);
@@ -77,7 +77,7 @@ namespace scn {
 
     protected:
 
-        static SynchronizedTimer static_sync_timer;
+        static SynchronizedTimer static_sync_timer_;
 
         static const uint32_t max_num_blocks_after_baseline_ = 720;
 

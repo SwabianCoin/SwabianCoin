@@ -14,12 +14,12 @@
  * along with SwabianCoin.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "scn/SynchronizedTime/SynchronizedTimerStub.h"
+#include "stubs/P2PConnectorStub.h"
+#include "stubs/SynchronizedTimerStub.h"
+#include "stubs/PeerStub.h"
 #include "scn/Blockchain/Blockchain.h"
-#include "scn/P2PConnector/P2PConnectorStub.h"
 #include "scn/Miner/MinerLocal.h"
 #include "scn/BlockchainManager/BlockchainManager.h"
-#include "PeerStub.h"
 #include <gtest/gtest.h>
 
 using namespace scn;
@@ -38,7 +38,7 @@ public:
         blockchain_ = std::make_unique<Blockchain>("./blockchain_unit_test/");
         p2p_connector_stub_ = std::make_unique<P2PConnectorStub>();
         miner_ = std::make_unique<MinerLocal>(0);
-        crypto_ = std::make_unique<CryptoHelper>(example_owner_public_key, example_owner_private_key);
+        crypto_ = std::make_unique<CryptoHelper>(example_owner_private_key);
         blockchain_manager_ = std::make_unique<BlockchainManager>(example_owner_public_key, example_owner_private_key, *blockchain_, *p2p_connector_stub_, *miner_, !synchronized, *sync_timer_stub_);
 
         for (uint32_t i = 0;i<peer_stubs_->size();i++) {
@@ -60,6 +60,11 @@ protected:
                                               "oUQDQgAEvdfi1bMgqn03FuVcjwtLMJyfnxinHrvYJzyHUNUzT6IngeP4ijXcHHqT\n"
                                               "XyfEoqZ5Clz+ZlOSYL1beQTpJ4BDwg==\n"
                                               "-----END EC PRIVATE KEY-----";
+
+    public_key_t other_public_key = PublicKeyPEM("-----BEGIN PUBLIC KEY-----\n"
+                                                 "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEMoMRqM5hS3hc3oiocVvjOdlD61FiK/6V\n"
+                                                 "CONcprHNBpbQCN52kLAnFVyE7wPu5rCIGspsQtC5zcKqhYidXa48Ew==\n"
+                                                 "-----END PUBLIC KEY-----");
 
     std::vector<std::string> valid_data_values_epoch_0 = {
             "0_MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEvdfi1bMgqn03FuVcjwtLMJyfnxinHrvYJzyHUNUzT6IngeP4ijXcHHqTXyfEoqZ5Clz+ZlOSYL1beQTpJ4BDwg==_248833349_7B",
@@ -528,4 +533,57 @@ TEST_F(TestBlockchainManager, OutOfSyncDetectionBadWeather1) {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     EXPECT_EQ(blockchain_manager_->getCurrentState(), ICycleState::State::FetchBlockchain);
+}
+
+TEST_F(TestBlockchainManager, TriggerCreation) {
+    init(true);
+    //wait one complete cycle (settling)
+    sync_timer_stub_->letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    sync_timer_stub_->letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    blockchain_manager_->foundHashCallback(0, valid_data_values_epoch_0[0]);
+
+    sync_timer_stub_->letTheTimeGoOn(10000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    //wait one complete cycle
+    sync_timer_stub_->letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    sync_timer_stub_->letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    //check if data_value entered the blockchain
+    ASSERT_EQ(p2p_connector_stub_->last_collection_block_.creations.size(), 1);
+    EXPECT_EQ(p2p_connector_stub_->last_collection_block_.creations.begin()->second.data_value, valid_data_values_epoch_0[0]);
+}
+
+TEST_F(TestBlockchainManager, TriggerTransactionAndCreation) {
+    init(true);
+    //wait one complete cycle (settling)
+    sync_timer_stub_->letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    sync_timer_stub_->letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    blockchain_manager_->foundHashCallback(0, valid_data_values_epoch_0[0]);
+    blockchain_manager_->triggerTransaction(other_public_key, 17);
+
+    sync_timer_stub_->letTheTimeGoOn(10000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    //wait one complete cycle
+    sync_timer_stub_->letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    sync_timer_stub_->letTheTimeGoOn(60000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    //check if data_value and transaction entered the blockchain
+    ASSERT_EQ(p2p_connector_stub_->last_collection_block_.creations.size(), 1);
+    EXPECT_EQ(p2p_connector_stub_->last_collection_block_.creations.begin()->second.data_value, valid_data_values_epoch_0[0]);
+    ASSERT_EQ(p2p_connector_stub_->last_collection_block_.transactions.size(), 1);
+    EXPECT_EQ(p2p_connector_stub_->last_collection_block_.transactions.begin()->second.fraction, 17);
+    EXPECT_EQ(p2p_connector_stub_->last_collection_block_.transactions.begin()->second.pre_owner, example_owner_public_key);
+    EXPECT_EQ(p2p_connector_stub_->last_collection_block_.transactions.begin()->second.post_owner, other_public_key);
 }

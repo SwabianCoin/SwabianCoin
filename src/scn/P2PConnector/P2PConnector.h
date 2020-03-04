@@ -18,6 +18,8 @@
 #define FULL_NODE_P2PCONNECTOR_H
 
 #include "IP2PConnector.h"
+#include "IEntryPointFetcher.h"
+#include "EntryPointFetcher.h"
 #include "scn/Blockchain/Blockchain.h"
 #include <functional>
 #include <vector>
@@ -40,7 +42,7 @@ namespace scn {
 
     class P2PConnector : public IP2PConnector, public libtorrent::IFcoinConnector {
     public:
-        P2PConnector(uint16_t port, const Blockchain& blockchain);
+        P2PConnector(uint16_t port, const Blockchain& blockchain, IEntryPointFetcher& entry_point_fetcher = static_entry_point_fetcher_);
         ~P2PConnector() override;
 
         void connect() override;
@@ -76,9 +78,13 @@ namespace scn {
 
         void receivedMessage(libtorrent::IPeer& peer, const std::string& compressed_message) override;
 
+        virtual std::shared_ptr<libtorrent::session> getTorrentSession();
+
     protected:
 
         static const uint16_t protocol_version_;
+
+        static EntryPointFetcher static_entry_point_fetcher_;
 
         virtual void alertThread();
 

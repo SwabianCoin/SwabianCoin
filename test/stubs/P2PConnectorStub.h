@@ -17,7 +17,8 @@
 #ifndef FULL_NODE_P2PCONNECTORSTUB_H
 #define FULL_NODE_P2PCONNECTORSTUB_H
 
-#include "IP2PConnector.h"
+#include "scn/P2PConnector/IP2PConnector.h"
+#include "scn/Blockchain/Blockchain.h"
 #include "scn/Common/Common.h"
 #include <thread>
 #include <mutex>

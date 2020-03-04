@@ -14,27 +14,22 @@
  * along with SwabianCoin.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef FULL_NODE_ENTRYPOINTFETCHER_H
-#define FULL_NODE_ENTRYPOINTFETCHER_H
+#ifndef FULL_NODE_IENTRYPOINTFETCHER_H
+#define FULL_NODE_IENTRYPOINTFETCHER_H
 
-#include "IEntryPointFetcher.h"
+#include "scn/Common/Common.h"
+#include <list>
 
 namespace scn {
 
-    class EntryPointFetcher : public IEntryPointFetcher {
+    class IEntryPointFetcher {
     public:
-        EntryPointFetcher() = default;
-        virtual ~EntryPointFetcher() = default;
+        IEntryPointFetcher() = default;
 
-        const std::list<std::pair<std::string, std::uint16_t>> fetch() override;
+        virtual ~IEntryPointFetcher() = default;
 
-    protected:
-        static const std::string entry_points_host_;
-        static const std::string entry_points_path_;
-        static const std::string ca_cert_path_;
-        static const std::list<std::pair<std::string, std::uint16_t>> entry_points_fallback_;
+        virtual const std::list<std::pair<std::string, std::uint16_t>> fetch() = 0;
     };
-
 }
 
-#endif //FULL_NODE_ENTRYPOINTFETCHER_H
+#endif //FULL_NODE_IENTRYPOINTFETCHER_H

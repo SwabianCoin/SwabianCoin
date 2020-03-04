@@ -108,7 +108,7 @@ if(BUILD_UNIT_TESTS)
             test/TestMiner.cpp
             test/TestBlockchain.cpp
             test/TestP2PConnector.cpp
-            test/TestBloomFilter.cpp
+            test/TestCommon.cpp
             )
     target_link_libraries(runTests full_node_library ${GTEST_LIBRARIES} gtest)
     target_compile_definitions(runTests PRIVATE CEREAL_SERIALIZE_FUNCTION_NAME=ser)

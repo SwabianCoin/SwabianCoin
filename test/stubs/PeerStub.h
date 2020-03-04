@@ -23,15 +23,19 @@ namespace scn {
 
     class PeerStub : public IPeer {
     public:
-        PeerStub() {}
+        PeerStub()
+        :send_message_counter_(0)
+        ,ban_counter_(0) {}
 
         virtual ~PeerStub() {}
 
         std::string info_ = "10.0.0.7";
         std::string id_   = "123456";
+        uint32_t send_message_counter_;
+        uint32_t ban_counter_;
 
         virtual void sendMessage(std::shared_ptr<std::string> message) {
-
+            send_message_counter_++;
         }
 
         virtual std::string getInfo() const {
@@ -47,7 +51,7 @@ namespace scn {
         }
 
         virtual void ban() {
-
+            ban_counter_++;
         }
 
         virtual std::string getId() const {

@@ -14,9 +14,9 @@
  * along with SwabianCoin.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "stubs/SynchronizedTimerStub.h"
+#include "stubs/P2PConnectorStub.h"
 #include "scn/BlockchainManager/PeersMonitor.h"
-#include "scn/SynchronizedTime/SynchronizedTimerStub.h"
-#include "scn/P2PConnector/P2PConnectorStub.h"
 #include <gtest/gtest.h>
 
 using namespace scn;

@@ -16,7 +16,7 @@
 
 #include "P2PConnector.h"
 #include "P2PDefinitions.h"
-#include "EntryPointFetcher.h"
+#include "IEntryPointFetcher.h"
 #include <cereal/archives/portable_binary.hpp>
 #include <boost/filesystem.hpp>
 #include <functional>
@@ -27,8 +27,9 @@ using namespace scn;
 
 const uint16_t P2PConnector::protocol_version_ = 1;
 
+EntryPointFetcher P2PConnector::static_entry_point_fetcher_;
 
-P2PConnector::P2PConnector(uint16_t port, const Blockchain& blockchain)
+P2PConnector::P2PConnector(uint16_t port, const Blockchain& blockchain, IEntryPointFetcher& entry_point_fetcher)
 : blockchain_(blockchain)
 , running_(true)
 , peer_sending_baseline_to_(nullptr)
@@ -48,7 +49,7 @@ P2PConnector::P2PConnector(uint16_t port, const Blockchain& blockchain)
         libtorrent::add_files(fs, "scn");
         libtorrent::create_torrent t(fs);
         t.set_creator("scn");
-        for (auto &entry_point : EntryPointFetcher::fetch()) {
+        for (auto &entry_point : entry_point_fetcher.fetch()) {
             t.add_node(std::pair<std::string, int>(entry_point.first, entry_point.second));
         }
         libtorrent::set_piece_hashes(t, ".");
@@ -432,4 +433,9 @@ void P2PConnector::receivedMessage(libtorrent::IPeer& peer, const std::string& m
     } catch(std::exception& e) {
         LOG(ERROR) << "Error in received message: " << e.what() << " message: " << message;
     }
+}
+
+
+std::shared_ptr<libtorrent::session> P2PConnector::getTorrentSession() {
+    return session_;
 }

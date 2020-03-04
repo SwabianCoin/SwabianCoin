@@ -25,7 +25,7 @@ class TestBlockchain : public testing::Test {
 public:
 
     TestBlockchain()
-    : crypto(example_owner_public_key, example_owner_private_key)
+    : crypto(example_owner_private_key)
     , blockchain("./blockchain/") {
         blockchain.initEmptyChain();
     }
@@ -784,4 +784,63 @@ TEST_F(TestBlockchain, validateBaselineBlockWalletInvalidPublicKey3) {
     block.header.generic_header.block_hash = 0;
     CryptoHelper::fillHash(block);
     EXPECT_FALSE(blockchain.validateBlock(block));
+}
+
+
+TEST_F(TestBlockchain, BaselineBlockOutputStream) {
+    auto block = buildBaselineBlock(true, 721, 12345);
+
+    std::stringstream stream;
+    stream << block;
+
+    EXPECT_NE(stream.str().find(hash_helper::toString(block.header.generic_header.previous_block_hash)), std::string::npos);
+    EXPECT_NE(stream.str().find(std::to_string(block.header.block_uid)), std::string::npos);
+}
+
+TEST_F(TestBlockchain, CollectionBlockOutputStream) {
+    auto block = buildCollectionBlock({valid_data_values_epoch_0[0]}, {{other_public_key, 1700}});
+
+    std::stringstream stream;
+    stream << block;
+
+    EXPECT_NE(stream.str().find(hash_helper::toString(block.header.generic_header.previous_block_hash)), std::string::npos);
+    EXPECT_NE(stream.str().find(std::to_string(block.header.block_uid)), std::string::npos);
+}
+
+TEST_F(TestBlockchain, CreationSubBlockOutputStream) {
+    auto block = buildCreationSubBlock(valid_data_values_epoch_0[0]);
+
+    std::stringstream stream;
+    stream << block;
+
+    EXPECT_NE(stream.str().find(hash_helper::toString(block.header.generic_header.previous_block_hash)), std::string::npos);
+    EXPECT_NE(stream.str().find(block.data_value), std::string::npos);
+}
+
+TEST_F(TestBlockchain, TransactionSubBlockOutputStream) {
+    auto block = buildTransactionSubBlock({other_public_key, 1700});
+
+    std::stringstream stream;
+    stream << block;
+
+    EXPECT_NE(stream.str().find(hash_helper::toString(block.header.generic_header.previous_block_hash)), std::string::npos);
+}
+
+TEST_F(TestBlockchain, BlockchainOutputStream) {
+    auto block1 = buildBaselineBlock(true, 721, 12345);
+    blockchain.setRootBlock(block1);
+    auto block2 = buildCollectionBlock({valid_data_values_epoch_0[0]}, {{other_public_key, 1700}});
+    blockchain.addBlock(block2);
+    auto block3 = buildCollectionBlock({valid_data_values_epoch_0[1]}, {{other_public_key, 999}});
+    blockchain.addBlock(block3);
+
+    std::stringstream stream;
+    stream << blockchain;
+
+    EXPECT_NE(stream.str().find(hash_helper::toString(block1.header.generic_header.previous_block_hash)), std::string::npos);
+    EXPECT_NE(stream.str().find(hash_helper::toString(block2.header.generic_header.previous_block_hash)), std::string::npos);
+    EXPECT_NE(stream.str().find(hash_helper::toString(block3.header.generic_header.previous_block_hash)), std::string::npos);
+    EXPECT_NE(stream.str().find(std::to_string(block1.header.block_uid)), std::string::npos);
+    EXPECT_NE(stream.str().find(std::to_string(block2.header.block_uid)), std::string::npos);
+    EXPECT_NE(stream.str().find(std::to_string(block3.header.block_uid)), std::string::npos);
 }

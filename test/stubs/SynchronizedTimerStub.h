@@ -17,7 +17,7 @@
 #ifndef FULL_NODE_SYNCHRONIZEDTIMERSTUB_H
 #define FULL_NODE_SYNCHRONIZEDTIMERSTUB_H
 
-#include "ISynchronizedTimer.h"
+#include "scn/SynchronizedTime/ISynchronizedTimer.h"
 
 namespace scn {
 

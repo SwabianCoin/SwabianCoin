@@ -30,7 +30,7 @@ namespace scn {
 
     class CryptoHelper {
     public:
-        CryptoHelper(const public_key_t& public_key, const private_key_t& private_key);
+        CryptoHelper(const private_key_t& private_key);
 
         virtual ~CryptoHelper();
 
@@ -77,7 +77,6 @@ namespace scn {
         static std::string decode64(const std::string &val);
         static std::string encode64(const std::string &val);
 
-        EC_KEY* public_ec_;
         EC_KEY* private_ec_;
     };
 
