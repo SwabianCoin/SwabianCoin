@@ -1,0 +1,23 @@
+language: cpp
+
+os:
+  - linux
+
+dist: bionic
+
+compiler:
+  - gcc
+
+before_install:
+  - sudo apt-get -y install libboost-all-dev libssl-dev libgflags2.2 lcov gcovr
+
+before_script:
+  - mkdir build
+  - cd build
+  - cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_UNIT_TESTS=ON -DUNIT_TEST_COVERAGE=ON ..
+
+script: 
+  - make runTests-coverage-lcov
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash) -f runTests-coverage-lcov.info || echo "Codecov did not collect coverage reports"
